@@ -1,0 +1,30 @@
+{
+  "background": {
+    "persistent": true,
+    "scripts": [ "background.js" ]
+  },
+  "browser_action": {
+    "default_icon": "disabled.png",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "description": "change location for google search",
+  "manifest_version": 2,
+  "name": "gs location changer",
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "cookies",
+    "*://www.google.com/",
+    "*://www.google.de/",
+    "*://www.google.at/",
+    "*://www.google.ch/",
+    "https://maps.googleapis.com/",
+    "storage"
+  ],
+  "version": "1.1"
+}
