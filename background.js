@@ -16,8 +16,8 @@ var onBeforeSendHeadersHandler = function(details) {
   if (!settings.enabled) {
     return {};
   }
-  var lat = settings.latitude*1e7 || 525109360;
-  var lng = settings.longitude*1e7 || 134104990;
+  var lat = Math.floor(settings.latitude*1e7) || 525109360;
+  var lng = Math.floor(settings.longitude*1e7) || 134104990;
   var decodedXgeo = 'role: CURRENT_LOCATION\nproducer: DEVICE_LOCATION\nradius: 65000\nlatlng <\n  latitude_e7: '+lat+'\n  longitude_e7: '+lng+'\n>';
   var encodedXgeo = 'a '+btoa(decodedXgeo);
   var xgeoHeader = {
