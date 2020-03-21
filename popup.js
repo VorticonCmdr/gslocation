@@ -1,39 +1,31 @@
-var geocodingapiKey = 'AIzaSyBbP9yILhpfIxC2NfmXXNqdVhcA8RAIEQs';
-var geocodingapiUrl = 'https://maps.googleapis.com/maps/api/geocode/json?key='+geocodingapiKey+'&address=';
-
-var placesapiKey = 'AIzaSyD7i2YsZwik9lzgxEVOlEJhQzASFBlq81w';
-var placesapiUrl = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?types=geocode&key='+placesapiKey+'&input=';
-
 var latitude,
     longitude,
-    loc,
+    place,
     enabled,
-    background;
+    autocomplete,
+    hl = 'en',
+    gl = 'US',
+    html = '',
+    key = 'AIzaSyBbP9yILhpfIxC2NfmXXNqdVhcA8RAIEQs';
 
-function getLocation() {
-  var place = $('#place').val();
-  loc = place;
-  background.settings.location = place;
-  if (place == '') {
-    return;
+var background = chrome.extension.getBackgroundPage();
+chrome.storage.sync.get("settings", function(result) {
+  if (result.latitude) {
+    background.settings.latitude = result.latitude;
   }
-  var uri = geocodingapiUrl+encodeURIComponent(place);
-  $.ajax({
-    url: uri
-  })
-  .done(function( data ) {
-    deleteUULE();
-    var lat = (data.results["0"].geometry.location.lat).toFixed(7);
-    var lng = (data.results["0"].geometry.location.lng).toFixed(7);
-    $('#latitude').val(lat);
-    background.settings.latitude = lat;
-    $('#longitude').val(lng);
-    background.settings.longitude = lng;
-  });
-}
+  if (result.longitude) {
+    background.settings.longitude = result.longitude;
+  }
+  if (result.location) {
+    background.settings.location = result.location;
+  }
+  if (result.enabled) {
+    background.settings.enabled = result.enabled;
+  }
+});
 
 function deleteUULE() {
-  chrome.cookies.getAll({'name':'UULE'}, function(cookies) { 
+  chrome.cookies.getAll({'name':'UULE'}, function(cookies) {
     for (c in cookies) {
       var cookie = cookies[c];
       var url = 'https://'+cookie.domain+cookie.path;
@@ -41,73 +33,143 @@ function deleteUULE() {
         console.log(details);
       });
     }
-  });  
+  });
 }
 
 function enabler() {
   if ($('#enabled').prop('checked')) {
     chrome.browserAction.setIcon({path:"enabled.png"});
+    background.settings.enabled = true;
   } else {
     chrome.browserAction.setIcon({path:"disabled.png"});
     deleteUULE();
+    background.settings.enabled = false;
   }
 }
 
-$(document).ready(function() {
-  background = chrome.extension.getBackgroundPage();
+function initAC() {
+  console.log('initialized');
+  autocomplete = new google.maps.places.Autocomplete(
+      (document.getElementById('place')),
+      {types: ['geocode']});
 
-  var options = {
-    url: function(phrase) {
-      return placesapiUrl+encodeURIComponent(phrase);
-    },
-    listLocation: "predictions",
-    list: {
-      onChooseEvent: function() {
-        getLocation();
-      } 
-    },
-    getValue: "description",
-    requestDelay: 500
-  };
-  $("#place").easyAutocomplete(options);
-  $("#enabled").change(enabler);
-  $('#place').prop('placeholder', background.settings.location);
+  autocomplete.setFields(['place_id', 'name', 'types', 'geometry']);
+  autocomplete.addListener('place_changed', fillInAddress);
 
-});
+}
+
+function fillInAddress() {
+  var place_id;
+  try {
+    var keys = Object.keys(autocomplete.gm_accessors_.place);
+    var l = keys.length;
+    while (l--) {
+      if (autocomplete.gm_accessors_.place[keys[l]].place && autocomplete.gm_accessors_.place[keys[l]].place.place_id) {
+        place_id = autocomplete.gm_accessors_.place[keys[l]].place.place_id;
+      }
+    }
+    if (!place_id) {
+      console.error('no place_id')
+    }
+    // try fetching data from private server first to save money
+    fetch('https://valentin.app/location?placeId='+place_id)
+      .then(function (response) {
+        return response.json()
+      })
+      .then(function (data) {
+        updateLatLng(data);
+      })
+      .catch(function (error) {
+        console.log('Request failed', error);
+        var place = autocomplete.getPlace();
+        var lat = place.geometry.location.lat();
+        var lng = place.geometry.location.lng();
+        try {
+          var data = {
+            lat: lat,
+            lng: lng,
+            placeId: place['place_id'],
+            name: place['name'],
+            place: $('#place').val()
+          };
+          updateLatLng(data);
+          var url = 'https://valentin.app/location'
+          fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          })
+          .catch(function (error) {
+            console.error('Error:', error);
+          })
+          .then(function (response) {
+              console.log('Success:', response.text());
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      });
+  } catch (e) {}
+
+}
+function updateLatLng(data) {
+  $('#latitude').val(data.lat);
+  background.settings.latitude = data.lat;
+  $('#longitude').val(data.lng);
+  background.settings.longitude = data.lng;
+  background.settings.location = data.id;
+  updateHandler(false);
+}
+
+function loadAPI(hl, gl) {
+  //Destroy old API
+  try {
+    document.querySelectorAll('script[src^="https://maps.googleapis.com"]').forEach(function (script) {
+      script.remove();
+    });
+    if (google) {
+      delete google.maps;
+    }
+  } catch (e) {}
+
+  //Load new API
+  var mapsApi = document.createElement('script');
+  mapsApi.src = 'https://maps.googleapis.com/maps/api/js?libraries=places&key='+key+'&callback=initAC';
+  mapsApi.setAttribute('async', '');
+  mapsApi.setAttribute('defer', '');
+  document.head.appendChild(mapsApi);
+}
 
 var loadHandler = function() {
 
+  $('#place').prop('placeholder', background.settings.location);
+  $('#latitude').prop('placeholder', background.settings.latitude);
+  $('#longitude').prop('placeholder', background.settings.longitude);
+  $("#enabled").change(enabler);
+
   // assign elements to variables for future references
+  place = document.querySelector('#place');
   latitude = document.querySelector('#latitude');
   longitude = document.querySelector('#longitude');
   enabled = document.querySelector('#enabled');
-  background = chrome.extension.getBackgroundPage();
 
-  // add a listener to each input and set the value from the background
-  latitude.addEventListener("keyup", updateHandler, false);
-  latitude.value = background.settings.latitude;
-
-  longitude.addEventListener("keyup", updateHandler, false);
-  longitude.value = background.settings.longitude;
-
-  enabled.addEventListener("change", updateHandler, false);
   enabled.checked = background.settings.enabled;
 
+  loadAPI(hl,gl);
 };
 
-var updateHandler = function(e)
-{
+var updateHandler = function(e) {
   var settings = {
     'latitude': parseFloat(latitude.value),
     'longitude': parseFloat(longitude.value),
-    'location': loc,
+    'location': place.value,
     'enabled': enabled.checked
   };
 
   // set the background settings
-  background.settings.latitude = settings.latitude;
-  background.settings.longitude = settings.longitude;
-  background.settings.enabled = settings.enabled;
+  background.settings = settings;
 
   // persist settings
   chrome.storage.sync.set(settings);

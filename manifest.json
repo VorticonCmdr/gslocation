@@ -15,16 +15,15 @@
   "description": "change location for google search",
   "manifest_version": 2,
   "name": "gs location changer",
+  "content_security_policy": "script-src 'self' https://maps.googleapis.com; object-src 'self'",
   "permissions": [
     "webRequest",
     "webRequestBlocking",
     "cookies",
-    "*://www.google.com/",
-    "*://www.google.de/",
-    "*://www.google.at/",
-    "*://www.google.ch/",
+    "https://www.google.com/",
+    "https://valentin.app/",
     "https://maps.googleapis.com/",
     "storage"
   ],
-  "version": "1.2"
+  "version": "1.4"
 }

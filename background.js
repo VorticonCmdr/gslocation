@@ -1,17 +1,17 @@
 var settings = {
-  'latitude': "",
-  'longitude': "",
-  'location': "",
+  'latitude': 52.510936,
+  'longitude': 13.410499,
+  'location': "Munich",
   'enabled': false
 };
-chrome.storage.sync.get(settings, function(result) {
+chrome.storage.sync.get("settings", function(result) {
   if(result.latitude) settings.latitude = result.latitude;
   if(result.longitude) settings.longitude = result.longitude;
   if(result.location) settings.location = result.location;
   if(result.enabled) settings.enabled = result.enabled;
 });
 
-var requestFilter = {urls: ["*://www.google.com/search*","*://www.google.de/search*","*://www.google.ch/search*","*://www.google.at/search*"]}
+var requestFilter = {urls: ["https://www.google.com/*"]}
 var onBeforeSendHeadersHandler = function(details) {
   if (!settings.enabled) {
     return {};
@@ -25,6 +25,7 @@ var onBeforeSendHeadersHandler = function(details) {
     value: encodedXgeo
   };
   details.requestHeaders.push(xgeoHeader);
+
   return {requestHeaders: details.requestHeaders};
 };
 
