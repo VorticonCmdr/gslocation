@@ -1,8 +1,10 @@
 var settings = {
-  'latitude': 52.510936,
-  'longitude': 13.410499,
-  'location': "Munich",
-  'enabled': false
+  'latitude': 37.422388,
+  'longitude': -122.0841883,
+  'location': "Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA",
+  'enabled': false,
+  'hl': 'en',
+  'gl': 'US'
 };
 chrome.storage.sync.get("settings", function(result) {
   if(result.latitude) settings.latitude = result.latitude;
@@ -26,7 +28,17 @@ var onBeforeSendHeadersHandler = function(details) {
   };
   details.requestHeaders.push(xgeoHeader);
 
+  var i = details.requestHeaders.length;
+  while (i--) {
+    if (details.requestHeaders[i].name === 'Accept-Language') {
+      details.requestHeaders.push({
+        name: "Accept-Language",
+        value: "en-US"
+      });
+    }
+  }
+
   return {requestHeaders: details.requestHeaders};
 };
 
-chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeadersHandler, requestFilter, ["blocking", "requestHeaders"]);
+chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeadersHandler, requestFilter, ["blocking", "requestHeaders", "extraHeaders"]);

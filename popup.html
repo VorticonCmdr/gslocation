@@ -1,36 +1,95 @@
 <!doctype html>
 <html>
   <head>
+    <meta charset="utf-8"/>
     <title>gs location changer</title>
-    <style type="text/css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <style>
       body {
-        font-family: verdana, sans-serif;
-        font-size: 10pt;
-        min-width: 400px;
-        min-height: 200px;
-        overflow-x: hidden;
+        width: 490px;
+        padding: 1em;
       }
-
-      img {
-        margin: 5px;
-        border: 2px solid black;
-        vertical-align: middle;
-        width: 75px;
-        height: 75px;
+      .twitter-typeahead {
+        width: 1%;
+        flex: 1 1 auto;
+      }
+      .tt-menu {
+        width: 100%;
+      }
+      .tt-menu,.typeahead {
+        background-color: #FFFFFF;
+      }
+      .tt-suggestion {
+        cursor: default;
+        padding: 0 8px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        line-height: 30px;
+        text-align: left;
+        border-top: 1px solid #e6e6e6;
+        margin-bottom: 0;
       }
     </style>
-
-    <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="jquery-3.5.1.min.js"></script>
+    <script type="text/javascript" src="handlebars.runtime.min-v4.7.6.js"></script>
+    <script type="text/javascript" src="typeahead.precompiled.js"></script>
+    <script type="text/javascript" src="locations.precompiled.js"></script>
+    <script type="text/javascript" src="typeahead.bundle.min.js"></script>
     <script type="text/javascript" src="popup.js"></script>
 
   </head>
   <body>
-    Place:</br>
-    <input type="text" id="place" placeholder="Munich" size="50" /><br/>
-    Latitude:<br/>
-    <input type="text" id="latitude" placeholder="52.510936"/><br/>
-    Longitude:<br/>
-    <input type="text" id="longitude" placeholder="13.410499"/><br/>
-    Enable: <input type="checkbox" id="enabled"/>
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">host language</span>
+          </div>
+          <input type="text" aria-label="host language" class="form-control" id="hl" placeholder="en">
+          <div class="input-group-prepend">
+            <span class="input-group-text">geo location</span>
+          </div>
+          <input type="text" aria-label="geolocation" class="form-control" id="gl" placeholder="US">
+        </div>
+        <div class="input-group">
+          <input id="regions" class="typeahead form-control" autocomplete="off" type="text" aria-hidden="true" placeholder="select language &amp; location" />
+        </div>
+      </div>
+
+      <div class="row mb-2">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">latitude</span>
+          </div>
+          <input type="text" aria-label="latitude" class="form-control" id="latitude" placeholder="37.422388">
+          <div class="input-group-prepend">
+            <span class="input-group-text">longitude</span>
+          </div>
+          <input type="text" aria-label="longitude" class="form-control" id="longitude" placeholder="-122.0841883">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">location</span>
+          </div>
+          <input id="place" type="text" class="form-control" aria-label="location" placeholder="Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA">
+          <div class="input-group-append">
+            <button class="btn btn-primary" type="button" id="button-geocode">geocode</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <input class="form-control" type="text" placeholder="enable overwrite" readonly>
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <input type="checkbox" aria-label="checkbox for enabling location overwrite" id="enabled">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
