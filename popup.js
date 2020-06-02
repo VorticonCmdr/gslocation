@@ -8,7 +8,7 @@ var latitude = 37.422388,
     gl = 'US',
     html = '',
     knownPlacesBloodhound,
-    key = '';
+    key = 'AIzaSyBGDObFLvehl6zLhr2ABkJXr1UOLs-zfOk';
 
 var google_sites = [
   {
