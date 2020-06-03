@@ -4,13 +4,13 @@ var settings = {
   'location': "Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA",
   'enabled': false,
   'hl': 'en',
-  'gl': 'US'
+  'gl': 'US',
+  'regions': 'United States - English'
 };
 chrome.storage.sync.get("settings", function(result) {
-  if(result.latitude) settings.latitude = result.latitude;
-  if(result.longitude) settings.longitude = result.longitude;
-  if(result.location) settings.location = result.location;
-  if(result.enabled) settings.enabled = result.enabled;
+  if (result && result.settings) {
+    settings = result.settings;
+  }
 });
 
 var requestFilter = {urls: ["https://www.google.com/*"]}
@@ -28,13 +28,15 @@ var onBeforeSendHeadersHandler = function(details) {
   };
   details.requestHeaders.push(xgeoHeader);
 
-  var i = details.requestHeaders.length;
-  while (i--) {
-    if (details.requestHeaders[i].name === 'Accept-Language') {
-      details.requestHeaders.push({
-        name: "Accept-Language",
-        value: "en-US"
-      });
+  if (settings.hl && settings.gl) {
+    var i = details.requestHeaders.length;
+    while (i--) {
+      if (details.requestHeaders[i].name === 'Accept-Language') {
+        details.requestHeaders.push({
+          name: "Accept-Language",
+          value: settings.hl+'-'+settings.gl
+        });
+      }
     }
   }
 

@@ -1,14 +1,11 @@
-var latitude = 37.422388,
-    longitude = -122.0841883,
-    place,
+var place,
     knownPlaces = [],
     enabled,
     geocoder,
-    hl = 'en',
-    gl = 'US',
-    html = '',
     knownPlacesBloodhound,
     key = 'AIzaSyBGDObFLvehl6zLhr2ABkJXr1UOLs-zfOk';
+
+var background = chrome.extension.getBackgroundPage();
 
 var google_sites = [
   {
@@ -3182,28 +3179,17 @@ chrome.storage.sync.get("knownPlaces", function(result) {
     }
   });
   $('#place').bind('typeahead:select', function(ev, data) {
-    $('#hl').val(data.hl);
-    $('#gl').val(data.gl);
     $('#latitude').val(data.lat);
     $('#longitude').val(data.lng);
-    loadAPI(data.hl,data.gl);
-  });
-});
+    $('#place').val(data.name);
 
-var background = chrome.extension.getBackgroundPage();
-chrome.storage.sync.get("settings", function(result) {
-  if (result.latitude) {
-    background.settings.latitude = result.latitude;
-  }
-  if (result.longitude) {
-    background.settings.longitude = result.longitude;
-  }
-  if (result.location) {
-    background.settings.location = result.location;
-  }
-  if (result.enabled) {
-    background.settings.enabled = result.enabled;
-  }
+    background.settings.latitude  = data.lat;
+    background.settings.longitude = data.lng;
+    background.settings.location  = data.name;
+
+    // persist settings
+    chrome.storage.sync.set({settings: background.settings});
+  });
 });
 
 function deleteUULE() {
@@ -3234,27 +3220,23 @@ function geocodeAddress() {
   geocoder.geocode({'address': address}, function(results, status) {
     if (status === 'OK' && results.length) {
       var result = results[0];
-      var settings = {
-        'latitude': parseFloat(result.geometry.location.lat()),
-        'longitude': parseFloat(result.geometry.location.lng()),
-        'location': result.formatted_address,
-        'enabled': enabled.checked
-      };
-      var place_id = result.place_id;
-      $('#place').val(settings.location);
-      $('#latitude').val(settings.latitude);
-      $('#longitude').val(settings.longitude);
 
-      // set the background settings
-      background.settings = settings;
+      background.settings.latitude  = parseFloat(result.geometry.location.lat());
+      background.settings.longitude = parseFloat(result.geometry.location.lng());
+      background.settings.location  = result.formatted_address;
+
+      $('#latitude').val(background.settings.latitude);
+      $('#longitude').val(background.settings.longitude);
+      $('#place').val(background.settings.location);
+
       // persist settings
-      chrome.storage.sync.set(settings);
+      chrome.storage.sync.set({settings: background.settings});
 
       try {
         var data = {
           lat: background.settings.latitude,
           lng: background.settings.longitude,
-          placeId: place_id,
+          placeId: result.place_id,
           name: background.settings.location,
           place: address
         };
@@ -3284,7 +3266,7 @@ function geocodeAddress() {
 }
 
 function initAC() {
-  console.log('initialized');
+  console.log('AC initialized');
   geocoder = new google.maps.Geocoder;
   $('#button-geocode').on('click', function() {
     geocodeAddress();
@@ -3308,8 +3290,9 @@ function updateLatLng(data) {
   background.settings.latitude = data.lat;
   $('#longitude').val(data.lng);
   background.settings.longitude = data.lng;
-  background.settings.location = data.id;
-  updateHandler(false);
+
+  // persist settings
+  chrome.storage.sync.set({settings: background.settings});
 }
 
 function loadAPI(hl, gl) {
@@ -3337,6 +3320,9 @@ var loadHandler = function() {
   $('#latitude').prop('placeholder', background.settings.latitude);
   $('#longitude').prop('placeholder', background.settings.longitude);
   $("#enabled").change(enabler);
+  $('#hl').prop('placeholder', background.settings.hl);
+  $('#gl').prop('placeholder', background.settings.gl);
+  $('#regions').prop('placeholder', background.settings.regions);
 
   // assign elements to variables for future references
   place = document.querySelector('#place');
@@ -3353,7 +3339,7 @@ var loadHandler = function() {
     limit: 10
   },
   {
-    display: 'name',
+    display: function(obj) { return obj.name+' - '+obj.lang; },
     name: 'states',
     source: regionsBloodhound,
     templates: {
@@ -3363,25 +3349,15 @@ var loadHandler = function() {
   $('#regions').bind('typeahead:select', function(ev, data) {
     $('#hl').val(data.hl);
     $('#gl').val(data.gl);
+    background.settings.hl = data.hl;
+    background.settings.gl = data.gl;
+    background.settings.regions = data.name+' - '+data.lang;
+    $('#regions').prop('placeholder', background.settings.regions);
+    chrome.storage.sync.set({settings: background.settings});
     loadAPI(data.hl,data.gl);
   });
 
   loadAPI(hl,gl);
-};
-
-var updateHandler = function(e) {
-  var settings = {
-    'latitude': parseFloat(latitude.value),
-    'longitude': parseFloat(longitude.value),
-    'location': place.value,
-    'enabled': enabled.checked
-  };
-
-  // set the background settings
-  background.settings = settings;
-
-  // persist settings
-  chrome.storage.sync.set(settings);
 };
 
 // init
