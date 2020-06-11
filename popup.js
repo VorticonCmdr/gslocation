@@ -7,6 +7,18 @@ var place,
 
 var background = chrome.extension.getBackgroundPage();
 
+chrome.storage.sync.get("settings", function(result) {
+  if (result && result.settings) {
+    background.settings = result.settings;
+  }
+});
+
+if (background.settings.enabled) {
+  chrome.browserAction.setIcon({path:"enabled.png"});
+} else {
+  chrome.browserAction.setIcon({path:"disabled.png"});
+}
+
 var google_sites = [
   {
     "name": "Germany",
@@ -3213,6 +3225,8 @@ function enabler() {
     deleteUULE();
     background.settings.enabled = false;
   }
+  // persist settings
+  chrome.storage.sync.set({settings: background.settings});
 }
 
 function geocodeAddress() {
