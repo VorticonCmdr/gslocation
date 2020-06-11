@@ -3242,20 +3242,6 @@ function geocodeAddress() {
         };
         saveKnownPlace(data);
         updateLatLng(data);
-        var url = 'https://valentin.app/location'
-        fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        })
-        .catch(function (error) {
-          console.error('Error:', error);
-        })
-        .then(function (response) {
-            console.log('Success:', response.text());
-        });
       } catch (e) {
         console.log(e);
       }

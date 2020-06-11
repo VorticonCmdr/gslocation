@@ -21,9 +21,8 @@
     "webRequestBlocking",
     "cookies",
     "https://www.google.com/",
-    "https://valentin.app/",
     "https://maps.googleapis.com/",
     "storage"
   ],
-  "version": "1.5.2"
+  "version": "1.5.3"
 }

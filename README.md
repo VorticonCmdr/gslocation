@@ -4,6 +4,6 @@ This is the code repository for the Chrome extension [gs location changer](https
 
 Once you set a location Google will write a cookie UULE which also contains the location which is set via the x-geo http header. Therefor to clear the location this extension also will delete the UULE cookie in order to reset all changes made.
 
-For more information on this topic please visit https://valentin.app/
+For more information on this topic please visit https://valentin.app/gs-location-changer.html
 
 You can contact me on [Twitter](https://twitter.com/VorticonCmdr)
