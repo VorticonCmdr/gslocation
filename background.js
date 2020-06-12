@@ -10,6 +10,11 @@ var settings = {
 chrome.storage.sync.get("settings", function(result) {
   if (result && result.settings) {
     settings = result.settings;
+    if (settings.enabled) {
+      chrome.browserAction.setIcon({path:"enabled.png"});
+    } else {
+      chrome.browserAction.setIcon({path:"disabled.png"});
+    }
   }
 });
 

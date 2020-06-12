@@ -7,12 +7,6 @@ var place,
 
 var background = chrome.extension.getBackgroundPage();
 
-chrome.storage.sync.get("settings", function(result) {
-  if (result && result.settings) {
-    background.settings = result.settings;
-  }
-});
-
 if (background.settings.enabled) {
   chrome.browserAction.setIcon({path:"enabled.png"});
 } else {
@@ -3266,7 +3260,6 @@ function geocodeAddress() {
 }
 
 function initAC() {
-  console.log('AC initialized');
   geocoder = new google.maps.Geocoder;
   $('#button-geocode').on('click', function() {
     geocodeAddress();
