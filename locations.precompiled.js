@@ -19,7 +19,7 @@ templates['locations'] = template({"compiler":[8,">= 4.3.0"],"main":function(con
     + "\" data-gl=\""
     + alias4(((helper = (helper = lookupProperty(helpers,"gl") || (depth0 != null ? lookupProperty(depth0,"gl") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"gl","hash":{},"data":data,"loc":{"start":{"line":1,"column":89},"end":{"line":1,"column":95}}}) : helper)))
     + "\">"
-    + alias4(((helper = (helper = lookupProperty(helpers,"name") || (depth0 != null ? lookupProperty(depth0,"name") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"name","hash":{},"data":data,"loc":{"start":{"line":1,"column":97},"end":{"line":1,"column":105}}}) : helper)))
+    + alias4(((helper = (helper = lookupProperty(helpers,"location") || (depth0 != null ? lookupProperty(depth0,"location") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"location","hash":{},"data":data,"loc":{"start":{"line":1,"column":97},"end":{"line":1,"column":105}}}) : helper)))
     + "</p>\n";
 },"useData":true});
 })();

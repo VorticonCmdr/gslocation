@@ -7,6 +7,7 @@
     "default_icon": "enabled.png",
     "default_popup": "popup.html"
   },
+  "options_page": "options.html",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
@@ -15,14 +16,17 @@
   "description": "change location for google search",
   "manifest_version": 2,
   "name": "gs location changer",
-  "content_security_policy": "script-src 'self' https://maps.googleapis.com; object-src 'self'",
+  "homepage_url": "https://valentin.app/gs-location-changer.html",
   "permissions": [
     "webRequest",
     "webRequestBlocking",
     "cookies",
     "https://www.google.com/",
-    "https://maps.googleapis.com/",
-    "storage"
+    "https://maps.google.com/",
+    "https://consent.google.com/",
+    "https://valentin.app/",
+    "storage",
+    "contextMenus"
   ],
-  "version": "1.5.4"
+  "version": "1.8"
 }

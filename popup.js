@@ -1,16 +1,15 @@
-var place,
-    knownPlaces = [],
-    enabled,
-    geocoder,
-    knownPlacesBloodhound,
-    key = 'AIzaSyBGDObFLvehl6zLhr2ABkJXr1UOLs-zfOk';
+var knownPlacesBloodhound;
 
 var background = chrome.extension.getBackgroundPage();
 
 if (background.settings.enabled) {
   chrome.browserAction.setIcon({path:"enabled.png"});
+  $('#enableText').addClass('text-danger');
+  $('#enableText').attr('placeholder', 'fake location enabled');
 } else {
   chrome.browserAction.setIcon({path:"disabled.png"});
+  $('#enableText').removeClass('text-danger');
+  $('#enableText').attr('placeholder', 'enable overwrite');
 }
 
 var google_sites = [
@@ -1764,7 +1763,7 @@ var google_sites = [
     "lang": "English",
     "hl": "en",
     "dir": "ltr",
-    "url": "https://www.google.ph/search"
+    "url": "https://www.google.com.ph/search"
   },
   {
     "name": "Philippines",
@@ -3162,13 +3161,13 @@ var locationsTemplate = Handlebars.templates.locations;
 
 chrome.storage.sync.get("knownPlaces", function(result) {
   if (result.knownPlaces) {
-    knownPlaces = result.knownPlaces;
+    background.knownPlaces = result.knownPlaces;
   }
   knownPlacesBloodhound = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name','place'),
+    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('location','name'),
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     identify: function(obj) { return obj.placeId; },
-    local: knownPlaces
+    local: background.knownPlaces
   });
   $('#place').typeahead({
     hint: true,
@@ -3177,7 +3176,7 @@ chrome.storage.sync.get("knownPlaces", function(result) {
     limit: 10
   },
   {
-    display: 'name',
+    display: 'location',
     name: 'locations',
     source: knownPlacesBloodhound,
     templates: {
@@ -3185,15 +3184,18 @@ chrome.storage.sync.get("knownPlaces", function(result) {
     }
   });
   $('#place').bind('typeahead:select', function(ev, data) {
-    $('#latitude').val(data.lat);
-    $('#longitude').val(data.lng);
-    $('#place').val(data.name);
+    var lat = data.lat || data.latitude;
+    var lng = data.lng || data.longitude;
+    $('#latitude').val(lat);
+    $('#longitude').val(lng);
+    $('#place').val(data.location);
 
-    background.settings.latitude  = data.lat;
-    background.settings.longitude = data.lng;
-    background.settings.location  = data.name;
+    background.settings.latitude  = lat;
+    background.settings.longitude = lng;
+    background.settings.location  = data.location;
 
     // persist settings
+    background.settings.timestamp = new Date().getTime();
     chrome.storage.sync.set({settings: background.settings});
   });
 });
@@ -3204,7 +3206,7 @@ function deleteUULE() {
       var cookie = cookies[c];
       var url = 'https://'+cookie.domain+cookie.path;
       chrome.cookies.remove({'name':'UULE', 'url': url}, function(details) {
-        console.log(details);
+        //console.log(details);
       });
     }
   });
@@ -3214,97 +3216,106 @@ function enabler() {
   if ($('#enabled').prop('checked')) {
     chrome.browserAction.setIcon({path:"enabled.png"});
     background.settings.enabled = true;
+    $('#enableText').addClass('text-danger');
+    $('#enableText').attr('placeholder', 'fake location enabled');
   } else {
     chrome.browserAction.setIcon({path:"disabled.png"});
     deleteUULE();
     background.settings.enabled = false;
+    $('#enableText').removeClass('text-danger');
+    $('#enableText').attr('placeholder', 'enable overwrite');
   }
   // persist settings
+  background.settings.timestamp = new Date().getTime();
   chrome.storage.sync.set({settings: background.settings});
 }
 
-function geocodeAddress() {
+function isFloat(n){
+  return Number(n) === n && n % 1 !== 0;
+}
+
+function isLatLng(address) {
+  var parts = address.split(',');
+  if (parts.length !== 2) {
+    return false;
+  }
+  var lat = parseFloat(parts[0]);
+  if (!isFloat(lat)) {
+    return false;
+  }
+  if (isNaN(lat)) {
+    return false;
+  }
+  var lng = parseFloat(parts[1]);
+  if (!isFloat(lat)) {
+    return false;
+  }
+  if (isNaN(lng)) {
+    return false;
+  }
+  return {
+    lat: lat,
+    lng: lng
+  };
+}
+
+function geocodeAddress2() {
+  var url = new URL('https://valentin.app/geocode');
+  var search_params = url.searchParams;
   var address = $('#place').val();
-  geocoder.geocode({'address': address}, function(results, status) {
-    if (status === 'OK' && results.length) {
-      var result = results[0];
-
-      background.settings.latitude  = parseFloat(result.geometry.location.lat());
-      background.settings.longitude = parseFloat(result.geometry.location.lng());
-      background.settings.location  = result.formatted_address;
-
-      $('#latitude').val(background.settings.latitude);
-      $('#longitude').val(background.settings.longitude);
-      $('#place').val(background.settings.location);
-
-      // persist settings
-      chrome.storage.sync.set({settings: background.settings});
-
-      try {
-        var data = {
-          lat: background.settings.latitude,
-          lng: background.settings.longitude,
-          placeId: result.place_id,
-          name: background.settings.location,
-          place: address
-        };
-        saveKnownPlace(data);
-        updateLatLng(data);
-      } catch (e) {
-        console.log(e);
-      }
-    } else {
-      console.log('Geocode was not successful for the following reason: ' + status);
-    }
-  });
-}
-
-function initAC() {
-  geocoder = new google.maps.Geocoder;
-  $('#button-geocode').on('click', function() {
-    geocodeAddress();
-  });
-}
-
-function saveKnownPlace(data) {
-  data['hl'] = $('#hl').val();
-  data['gl'] = $('#gl').val();
-  knownPlaces.push(data);
-  var l = knownPlaces.length;
-  if (l > 100) {
-    knownPlaces = knownPlaces.slice(l-100);
+  var position = isLatLng(address);
+  if (position) {
+    $('#latitude').val(position.lat);
+    $('#longitude').val(position.lng);
+    $('#place').attr('placeholder', address);
+    $('#place').val('');
+    return;
   }
-  chrome.storage.sync.set({knownPlaces: knownPlaces});
-  knownPlacesBloodhound.add([data]);
-}
+  if (address) {
+    search_params.set('address', address.toLowerCase());
+    search_params.set('hl', background.settings.hl);
+    search_params.set('gl', background.settings.gl);
+    search_params.set('client', 'chrome');
+    url.search = search_params.toString();
+    url = url.toString();
 
-function updateLatLng(data) {
-  $('#latitude').val(data.lat);
-  background.settings.latitude = data.lat;
-  $('#longitude').val(data.lng);
-  background.settings.longitude = data.lng;
-
-  // persist settings
-  chrome.storage.sync.set({settings: background.settings});
-}
-
-function loadAPI(hl, gl) {
-  //Destroy old API
-  try {
-    document.querySelectorAll('script[src^="https://maps.googleapis.com"]').forEach(function (script) {
-      script.remove();
+    fetch(url, {
+      method: 'GET'
+    })
+    .catch(function (error) {
+      console.error('Error:', error);
+    })
+    .then(response => response.json())
+    .then(function (data) {
+      parseGeocodeResult(data, address);
     });
-    if (google) {
-      delete google.maps;
-    }
-  } catch (e) {}
+  } else {
+    console.log('no address to geocode');
+  }
+}
 
-  //Load new API
-  var mapsApi = document.createElement('script');
-  mapsApi.src = 'https://maps.googleapis.com/maps/api/js?key='+key+'&callback=initAC';
-  mapsApi.setAttribute('async', '');
-  mapsApi.setAttribute('defer', '');
-  document.head.appendChild(mapsApi);
+function parseGeocodeResult(data, address) {
+  if (data.status === 'OK' && data.results.length) {
+    var result = data.results[0];
+
+    background.settings.latitude  = parseFloat(result.geometry.location.lat);
+    background.settings.longitude = parseFloat(result.geometry.location.lng);
+    background.settings.location  = result.formatted_address;
+    background.settings.placeId   = result.place_id;
+    background.settings.name      = address;
+
+    $('#latitude').val(background.settings.latitude);
+    $('#longitude').val(background.settings.longitude);
+    $('#place').val(background.settings.location);
+
+    // persist settings
+    background.settings.timestamp = new Date().getTime();
+    chrome.storage.sync.set({settings: background.settings});
+
+    knownPlacesBloodhound.add([background.settings]);
+  } else {
+    console.log('Geocode was not successful for the following reason: ' + status);
+  }
 }
 
 var loadHandler = function() {
@@ -3312,18 +3323,21 @@ var loadHandler = function() {
   $('#place').prop('placeholder', background.settings.location);
   $('#latitude').prop('placeholder', background.settings.latitude);
   $('#longitude').prop('placeholder', background.settings.longitude);
-  $("#enabled").change(enabler);
   $('#hl').prop('placeholder', background.settings.hl);
   $('#gl').prop('placeholder', background.settings.gl);
   $('#regions').prop('placeholder', background.settings.regions);
+  $("#enabled").change(enabler);
 
-  // assign elements to variables for future references
-  place = document.querySelector('#place');
-  latitude = document.querySelector('#latitude');
-  longitude = document.querySelector('#longitude');
-  enabled = document.querySelector('#enabled');
-
+  var enabled = document.querySelector('#enabled');
   enabled.checked = background.settings.enabled;
+
+  if (background.settings.enabled) {
+    $('#enableText').addClass('text-danger');
+    $('#enableText').attr('placeholder', 'fake location enabled');
+  } else {
+    $('#enableText').removeClass('text-danger');
+    $('#enableText').attr('placeholder', 'enable overwrite');
+  }
 
   $('#regions').typeahead({
     hint: true,
@@ -3346,11 +3360,13 @@ var loadHandler = function() {
     background.settings.gl = data.gl;
     background.settings.regions = data.name+' - '+data.lang;
     $('#regions').prop('placeholder', background.settings.regions);
+    background.settings.timestamp = new Date().getTime();
     chrome.storage.sync.set({settings: background.settings});
-    loadAPI(data.hl,data.gl);
   });
 
-  loadAPI(hl,gl);
+  $('#button-geocode').on('click', function() {
+    geocodeAddress2();
+  });
 };
 
 // init
