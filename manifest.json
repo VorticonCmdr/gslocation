@@ -23,10 +23,9 @@
     "cookies",
     "https://www.google.com/",
     "https://maps.google.com/",
-    "https://consent.google.com/",
     "https://valentin.app/",
     "storage",
     "contextMenus"
   ],
-  "version": "1.8"
+  "version": "1.81"
 }

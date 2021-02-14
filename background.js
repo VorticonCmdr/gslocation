@@ -13,7 +13,7 @@ var settings = {
 var options = {
   contextnumber: 3,
   maxplaces: 100,
-  consent: 'YES+US.en+V14+BX; '
+  consent: ''
 };
 
 var knownPlaces = [
@@ -58,25 +58,36 @@ var onBeforeSendHeadersHandler = function(details) {
   };
   details.requestHeaders.push(xgeoHeader);
 
-  if (settings.hl && settings.gl) {
-    var i = details.requestHeaders.length;
-    while (i--) {
-      if (details.requestHeaders[i].name === 'Accept-Language') {
-        details.requestHeaders.push({
-          name: "Accept-Language",
-          value: settings.hl+'-'+settings.gl
-        });
-      }
+  var hasCookie = 0;
+  details.requestHeaders.forEach(function (header) {
+    switch (header.name) {
+      case 'Accept-Language':
+        if (settings.hl && settings.gl) {
+          header.value = settings.hl+'-'+settings.gl;
+        }
+        break;
+      case 'Cookie':
+        hasCookie += 1;
+        if (options.consent) {
+          var consent = 'CONSENT='+options.consent;
+          var cookies = [consent];
+          header.value.split('; ').forEach((item, i) => {
+            var c = item.split('=');
+            if (c[0] !== 'CONSENT') {
+              cookies.push(item);
+            }
+          });
+          header.value = cookies.join('; ');
+        }
+        break;
     }
-  }
-
-
-  if (document.cookie == "" && options.consent) {
-    var consentCookieHeader = {
-      name: 'cookie',
+  });
+  if (!hasCookie) {
+    var cookieHeader = {
+      name: "Cookie",
       value: 'CONSENT='+options.consent
     };
-    details.requestHeaders.push(consentCookieHeader);
+    details.requestHeaders.push(cookieHeader);
   }
 
   return {requestHeaders: details.requestHeaders};
