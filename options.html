@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>gs location changer</title>
+    <link rel="stylesheet" href="bootstrap.min.v4.5.0.css">
+    <script type="text/javascript" src="jquery-3.5.1.min.js"></script>
+    <script type="text/javascript" src="handlebars.runtime.min-v4.7.6.js"></script>
+    <script type="text/javascript" src="knownplaces.precompiled.js"></script>
+    <script type="text/javascript" src="options.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <h1>gs location changer options</h1>
+      </div>
+      <div class="row">
+        <h2>settings</h2>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text">number of places in context menu</span>
+          </div>
+          <input id="input-contextnumber" type="number" min="0" class="form-control" placeholder="default 3" aria-label="number of places in context menu" aria-describedby="button-contextnumber">
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id="button-contextnumber">set</button>
+          </div>
+        </div>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text">number of places to remember</span>
+          </div>
+          <input id="input-maxplaces" type="number" min="0" class="form-control" placeholder="default 100" aria-label="number of places to remember" aria-describedby="button-maxplaces">
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id="button-maxplaces">set</button>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <h2>known locations</h2>
+        <table class="table">
+          <thead class="thead-dark">
+            <tr>
+              <th scope="col">location</th>
+              <th scope="col">lat</th>
+              <th scope="col">lng</th>
+              <th scope="col">hl</th>
+              <th scope="col">gl</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody id="knownplaces">
+          </tbody>
+        </table>
+      </div>
+      <div class="row">
+        <h2>consent cookie</h2>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text">set cookie CONSENT=</span>
+          </div>
+          <input id="input-consent" type="text" class="form-control" placeholder="does not autoset cookie if empty" aria-label="autoset consent?" aria-describedby="button-consent">
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id="button-consent">set</button>
+          </div>
+        </div>
+        <small>YES+US.en+V14+BX</small>
+      </div>
+    </div>
+  </body>
+</html>

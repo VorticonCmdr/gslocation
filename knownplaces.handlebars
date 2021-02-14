@@ -1,0 +1,14 @@
+{{#each knownPlaces}}
+<tr>
+  <th scope="row">{{location}}</th>
+  <td>{{latitude}}</td>
+  <td>{{longitude}}</td>
+  <td>{{hl}}</td>
+  <td>{{gl}}</td>
+  <td>
+    <div class="btn-group" role="group" aria-label="actions">
+      <button data-placeId="{{placeId}}" type="button" class="remove btn btn-sm btn-danger">remove</button>
+    </div>
+  </td>
+</tr>
+{{/each}}
