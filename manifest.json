@@ -1,31 +1,36 @@
 {
-  "background": {
-    "persistent": true,
-    "scripts": [ "background.js" ]
-  },
-  "browser_action": {
-    "default_icon": "enabled.png",
-    "default_popup": "popup.html"
-  },
-  "options_page": "options.html",
-  "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
-  },
-  "description": "change location for google search",
-  "manifest_version": 2,
-  "name": "gs location changer",
-  "homepage_url": "https://valentin.app/gs-location-changer.html",
   "permissions": [
-    "webRequest",
-    "webRequestBlocking",
+    "declarativeNetRequestWithHostAccess",
     "cookies",
-    "https://www.google.com/",
-    "https://maps.google.com/",
-    "https://valentin.app/",
     "storage",
     "contextMenus"
   ],
-  "version": "1.81"
+  "host_permissions": [
+    "https://www.google.com/",
+    "https://news.google.com/",
+    "https://maps.google.com/",
+    "https://apis.google.com/",
+    "https://valentin.app/"
+  ],
+  "declarative_net_request" : {
+    "rule_resources" : []
+  },
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "action": {
+    "default_icon": "img/disabled.png",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "img/icon16.png",
+    "48": "img/icon48.png",
+    "128": "img/icon128.png"
+  },
+  "options_page": "options.html",
+  "description": "change location for google search",
+  "manifest_version": 3,
+  "name": "gs location changer",
+  "homepage_url": "https://valentin.app/gs-location-changer.html",
+  "version": "3.0"
 }

@@ -1,0 +1,17 @@
+[{
+  "id": 1,
+  "priority": 1,
+  "action": {
+    "type": "modifyHeaders",
+    "requestHeaders": [
+      {
+        "header": "x-geo",
+        "operation": "set",
+        "value": "a cm9sZTogQ1VSUkVOVF9MT0NBVElPTgpwcm9kdWNlcjogREVWSUNFX0xPQ0FUSU9OCnJhZGl1czogNjUwMDAKbGF0bG5nIDwKICBsYXRpdHVkZV9lNzogMzc0MjIzODgwCiAgbG9uZ2l0dWRlX2U3OiAtMTIyMDg0MTg4Mwo+"
+      }
+    ]
+  },
+  "condition": {
+    "urlFilter": "google.com"
+  }
+}]

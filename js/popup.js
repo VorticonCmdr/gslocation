@@ -1,18 +1,52 @@
-var knownPlacesBloodhound;
+const background = {
+  settings: {
+    'latitude': 37.422388,
+    'longitude': -122.0841883,
+    'location': "Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA",
+    'name': "Google Building 40",
+    'placeId': "ChIJj38IfwK6j4ARNcyPDnEGa9g",
+    'enabled': false,
+    'hl': 'en',
+    'gl': 'US',
+    'regions': 'United States - English'
+  },
+  knownPlaces: [
+    {
+      'latitude': 37.422388,
+      'longitude': -122.0841883,
+      'location': "Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA",
+      'name': "Google Building 40",
+      'placeId': "ChIJj38IfwK6j4ARNcyPDnEGa9g",
+      'enabled': false,
+      'hl': 'en',
+      'gl': 'US',
+      'regions': 'United States - English'
+    }
+  ]
+};
+chrome.storage.sync.get(null, (data) => {
+  if (data.settings) {
+    Object.assign(background.settings, data.settings);
+  }
+  if (data.knownPlaces && data.knownPlaces.length > 0) {
+    Object.assign(background.knownPlaces, data.knownPlaces);
+  }
+  checkEnabled();
+});
 
-var background = chrome.extension.getBackgroundPage();
-
-if (background.settings.enabled) {
-  chrome.browserAction.setIcon({path:"enabled.png"});
-  $('#enableText').addClass('text-danger');
-  $('#enableText').attr('placeholder', 'fake location enabled');
-} else {
-  chrome.browserAction.setIcon({path:"disabled.png"});
-  $('#enableText').removeClass('text-danger');
-  $('#enableText').attr('placeholder', 'enable overwrite');
+function checkEnabled() {
+  if (background.settings.enabled) {
+    $('#enableText').addClass('text-danger');
+    $('#enableText').attr('placeholder', 'fake location enabled');
+  } else {
+    $('#enableText').removeClass('text-danger');
+    $('#enableText').attr('placeholder', 'enable overwrite');
+  }
 }
 
-var google_sites = [
+var knownPlacesBloodhound;
+
+const google_sites = [
   {
     "name": "Germany",
     "gl": "DE",
@@ -3156,8 +3190,8 @@ var regionsBloodhound = new Bloodhound({
   identify: function(obj) { return obj.hl + obj.gl; },
   local: google_sites
 });
-var regionsTemplate = Handlebars.templates.typeahead;
-var locationsTemplate = Handlebars.templates.locations;
+const regionsTemplate = Handlebars.templates.typeahead;
+const locationsTemplate = Handlebars.templates.locations;
 
 chrome.storage.sync.get("knownPlaces", function(result) {
   if (result.knownPlaces) {
@@ -3189,10 +3223,16 @@ chrome.storage.sync.get("knownPlaces", function(result) {
     $('#latitude').val(lat);
     $('#longitude').val(lng);
     $('#place').val(data.location);
+    $('#hl').val(data.hl);
+    $('#gl').val(data.gl);
+    $('#regions').val(data.regions);
 
     background.settings.latitude  = lat;
     background.settings.longitude = lng;
     background.settings.location  = data.location;
+    background.settings.hl = data.hl;
+    background.settings.gl = data.gl;
+    background.settings.regions = data.regions;
 
     // persist settings
     background.settings.timestamp = new Date().getTime();
@@ -3214,12 +3254,10 @@ function deleteUULE() {
 
 function enabler() {
   if ($('#enabled').prop('checked')) {
-    chrome.browserAction.setIcon({path:"enabled.png"});
     background.settings.enabled = true;
     $('#enableText').addClass('text-danger');
     $('#enableText').attr('placeholder', 'fake location enabled');
   } else {
-    chrome.browserAction.setIcon({path:"disabled.png"});
     deleteUULE();
     background.settings.enabled = false;
     $('#enableText').removeClass('text-danger');
@@ -3312,7 +3350,9 @@ function parseGeocodeResult(data, address) {
     background.settings.timestamp = new Date().getTime();
     chrome.storage.sync.set({settings: background.settings});
 
+    background.knownPlaces.push(background.settings);
     knownPlacesBloodhound.add([background.settings]);
+    chrome.storage.sync.set({knownPlaces: background.knownPlaces});
   } else {
     console.log('Geocode was not successful for the following reason: ' + status);
   }

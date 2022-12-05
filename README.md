@@ -6,4 +6,4 @@ Once you set a location Google will write a cookie UULE which also contains the 
 
 For more information on this topic please visit https://valentin.app/gs-location-changer.html
 
-You can contact me on [Twitter](https://twitter.com/VorticonCmdr)
+You can contact me on [Mastodon](https://seocommunity.social/@vorticoncmdr)

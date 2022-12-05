@@ -1,4 +1,34 @@
-var background = chrome.extension.getBackgroundPage();
+const background = {
+  options: {
+    consent: '',
+    contextnumber: 3,
+    maxplaces: 100
+  },
+  settings: {
+    'latitude': 37.422388,
+    'longitude': -122.0841883,
+    'location': "Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA",
+    'name': "Google Building 40",
+    'placeId': "ChIJj38IfwK6j4ARNcyPDnEGa9g",
+    'enabled': false,
+    'hl': 'en',
+    'gl': 'US',
+    'regions': 'United States - English'
+  },
+  knownPlaces: [
+    {
+      'latitude': 37.422388,
+      'longitude': -122.0841883,
+      'location': "Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA",
+      'name': "Google Building 40",
+      'placeId': "ChIJj38IfwK6j4ARNcyPDnEGa9g",
+      'enabled': false,
+      'hl': 'en',
+      'gl': 'US',
+      'regions': 'United States - English'
+    }
+  ]
+};
 
 function compareTimestamp(a, b) {
   if (!a.timestamp || !b.timestamp) {
@@ -20,11 +50,12 @@ function getKnownPlaces() {
         var removedPlace = result.knownPlaces.splice(index, 1);
         if (background.settings.placeId == removedPlace[0].placeId) {
           background.settings.enabled = false;
-          chrome.browserAction.setIcon({path:"disabled.png"});
+          chrome.action.setIcon({path:"disabled.png"});
+          chrome.storage.sync.set({settings: background.settings});
         }
         background.knownPlaces = result.knownPlaces;
         background.settings.timestamp = new Date().getTime();
-        chrome.storage.sync.set({settings: background.settings}, function () {
+        chrome.storage.sync.set({knownPlaces: background.knownPlaces}, function () {
           getKnownPlaces();
         });
       });
