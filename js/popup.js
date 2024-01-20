@@ -32,6 +32,7 @@ chrome.storage.sync.get(null, (data) => {
     Object.assign(background.knownPlaces, data.knownPlaces);
   }
   checkEnabled();
+  loadHandler();
 });
 
 function checkEnabled() {
@@ -3297,11 +3298,10 @@ function isLatLng(address) {
   };
 }
 
-function geocodeAddress2() {
-  var url = new URL('https://valentin.app/geocode');
-  var search_params = url.searchParams;
-  var address = $('#place').val();
-  var position = isLatLng(address);
+function geocodeAddress() {
+  let geocodeURL = new URL('https://www.google.com/search?tbm=map&authuser=0&hl=de&gl=de&q=');
+  let address = $('#place').val();
+  let position = isLatLng(address);
   if (position) {
     $('#latitude').val(position.lat);
     $('#longitude').val(position.lng);
@@ -3310,20 +3310,19 @@ function geocodeAddress2() {
     return;
   }
   if (address) {
-    search_params.set('address', address.toLowerCase());
-    search_params.set('hl', background.settings.hl);
-    search_params.set('gl', background.settings.gl);
-    search_params.set('client', 'chrome');
-    url.search = search_params.toString();
-    url = url.toString();
+    geocodeURL.searchParams.set('q',  address.toLowerCase());
+    geocodeURL.searchParams.set('hl', background.settings.hl);
+    geocodeURL.searchParams.set('gl', background.settings.gl);
+    geocodeURL.searchParams.set('tbm', 'map');
+    geocodeURL.searchParams.set('authuser', '0');
 
-    fetch(url, {
+    fetch(geocodeURL.href, {
       method: 'GET'
     })
     .catch(function (error) {
       console.error('Error:', error);
     })
-    .then(response => response.json())
+    .then(response => response.text())
     .then(function (data) {
       parseGeocodeResult(data, address);
     });
@@ -3333,28 +3332,32 @@ function geocodeAddress2() {
 }
 
 function parseGeocodeResult(data, address) {
-  if (data.status === 'OK' && data.results.length) {
-    var result = data.results[0];
+  let arr = data.split('\n');
 
-    background.settings.latitude  = parseFloat(result.geometry.location.lat);
-    background.settings.longitude = parseFloat(result.geometry.location.lng);
-    background.settings.location  = result.formatted_address;
-    background.settings.placeId   = result.place_id;
-    background.settings.name      = address;
+  if (arr.length != 2) {
+    console.log('unknown response data');
+    return;
+  }
+  let result = JSON.parse(arr[1]);
 
-    $('#latitude').val(background.settings.latitude);
-    $('#longitude').val(background.settings.longitude);
-    $('#place').val(background.settings.location);
+  background.settings.latitude  = parseFloat(result?.[0]?.[1]?.[0]?.[14]?.[9]?.[2]);
+  background.settings.longitude = parseFloat(result?.[0]?.[1]?.[0]?.[14]?.[9]?.[3]);
+  background.settings.location  = result?.[0]?.[1]?.[0]?.[14]?.[18] || address;
+  background.settings.placeId   = result?.[0]?.[1]?.[0]?.[14]?.[78];
+  background.settings.name      = address;
 
-    // persist settings
-    background.settings.timestamp = new Date().getTime();
-    chrome.storage.sync.set({settings: background.settings});
+  $('#latitude').val(background.settings.latitude);
+  $('#longitude').val(background.settings.longitude);
+  $('#place').val(background.settings.location);
 
+  // persist settings
+  background.settings.timestamp = new Date().getTime();
+  chrome.storage.sync.set({settings: background.settings});
+
+  if (!background.knownPlaces.some(element => element.placeId === background.settings.placeId)) {
     background.knownPlaces.push(background.settings);
     knownPlacesBloodhound.add([background.settings]);
     chrome.storage.sync.set({knownPlaces: background.knownPlaces});
-  } else {
-    console.log('Geocode was not successful for the following reason: ' + status);
   }
 }
 
@@ -3405,9 +3408,8 @@ var loadHandler = function() {
   });
 
   $('#button-geocode').on('click', function() {
-    geocodeAddress2();
+    geocodeAddress();
   });
 };
-
 // init
-document.addEventListener('DOMContentLoaded', loadHandler);
+//document.addEventListener('DOMContentLoaded', loadHandler);

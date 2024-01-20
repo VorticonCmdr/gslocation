@@ -16,6 +16,22 @@ const settings = {
 };
 const knownPlaces = [settings];
 
+chrome.runtime.onStartup.addListener(function() {
+  chrome.storage.sync.get(null, (data) => {
+    if (data.settings) {
+      Object.assign(settings, data.settings);
+      checkEnabled();
+    }
+    if (data.options) {
+      Object.assign(options, data.options);
+    }
+    if (data.knownPlaces) {
+      Object.assign(knownPlaces, data.knownPlaces);
+      setupContextMenu(knownPlaces);
+    }
+  });
+});
+
 function genUULE() {
   var lat = Math.floor(settings.latitude*1e7) || 525109360;
   var lng = Math.floor(settings.longitude*1e7) || 134104990;
@@ -56,7 +72,7 @@ function checkEnabled() {
               ]
             },
             "condition": {
-              "urlFilter": "||google.com/",
+              "urlFilter": "google.com/",
               "resourceTypes": [
                 "main_frame",
                 "sub_frame",
@@ -82,19 +98,6 @@ function checkEnabled() {
     );
   }
 }
-chrome.storage.sync.get(null, (data) => {
-  if (data.settings) {
-    Object.assign(settings, data.settings);
-    checkEnabled();
-  }
-  if (data.options) {
-    Object.assign(options, data.options);
-  }
-  if (data.knownPlaces) {
-    Object.assign(knownPlaces, data.knownPlaces);
-    setupContextMenu(knownPlaces);
-  }
-});
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'sync') {
@@ -117,13 +120,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
 var parent = chrome.contextMenus.create({
   "title": "change location",
   "id": "window"
-});
+}, () => chrome.runtime.lastError);
 chrome.contextMenus.create({
   "title": "🚫 disable fake location",
   "id": "disable",
   "parentId": parent
   //,"onclick": genericOnClick
-});
+}, () => chrome.runtime.lastError);
 
 function compareTimestamp(a, b) {
   if (!a.timestamp || !b.timestamp) {
@@ -135,15 +138,15 @@ function compareTimestamp(a, b) {
 function setupContextMenu(allPlaces) {
   var contextPlaces = allPlaces.sort(compareTimestamp).slice(Math.max(allPlaces.length - options.contextnumber, 0));
   chrome.contextMenus.removeAll(function() {
-    parent = chrome.contextMenus.create({"title": "change location", "id": "window"});
-    chrome.contextMenus.create({"title": "🚫 disable fake location", "id": "disable","parentId": parent});
-    chrome.contextMenus.create({"type": "separator", "id": "s1", "parentId": parent});
+    parent = chrome.contextMenus.create({"title": "change location", "id": "window"}, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({"title": "🚫 disable fake location", "id": "disable","parentId": parent}, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({"type": "separator", "id": "s1", "parentId": parent}, () => chrome.runtime.lastError);
     if (settings.enabled && settings.location) {
-      chrome.contextMenus.create({"title": "📍"+settings.location, "id": settings.placeId, "parentId": parent});
-      chrome.contextMenus.create({"type": "separator", "id": "s2", "parentId": parent});
+      chrome.contextMenus.create({"title": "📍"+settings.location, "id": settings.placeId, "parentId": parent}, () => chrome.runtime.lastError);
+      chrome.contextMenus.create({"type": "separator", "id": "s2", "parentId": parent}, () => chrome.runtime.lastError);
     } else {
       if (settings.location) {
-        chrome.contextMenus.create({"title": settings.location, "id": settings.placeId, "parentId": parent});
+        chrome.contextMenus.create({"title": settings.location, "id": settings.placeId, "parentId": parent}, () => chrome.runtime.lastError);
       }
     }
     contextPlaces.forEach(function (item) {
@@ -154,7 +157,7 @@ function setupContextMenu(allPlaces) {
         return;
       }
       if (item.placeId != settings.placeId) {
-        chrome.contextMenus.create({"title": item.location, "id": item.placeId, "parentId": parent});
+        chrome.contextMenus.create({"title": item.location, "id": item.placeId, "parentId": parent}, () => chrome.runtime.lastError);
       }
     });
     chrome.contextMenus.onClicked.addListener(genericOnClick);

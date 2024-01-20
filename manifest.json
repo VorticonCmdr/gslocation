@@ -7,10 +7,7 @@
   ],
   "host_permissions": [
     "https://www.google.com/",
-    "https://news.google.com/",
-    "https://maps.google.com/",
-    "https://apis.google.com/",
-    "https://valentin.app/"
+    "https://maps.google.com/"
   ],
   "declarative_net_request" : {
     "rule_resources" : []
@@ -32,5 +29,5 @@
   "manifest_version": 3,
   "name": "gs location changer",
   "homepage_url": "https://valentin.app/gs-location-changer.html",
-  "version": "3.0"
+  "version": "3.2"
 }
