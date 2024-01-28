@@ -94,7 +94,11 @@ function checkEnabled() {
       {
         removeRuleIds: [1]
       },
-      () => { console.log('removed'); }
+      () => {
+        if (chrome.runtime.lastError) {
+          console.log(chrome.runtime.lastError.message);
+        }
+      }
     );
   }
 }
