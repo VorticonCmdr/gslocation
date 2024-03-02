@@ -34,7 +34,7 @@
         color: #dc3545!important;
       }
     </style>
-    <script type="text/javascript" src="js/jquery-3.6.0.slim.min.js"></script>
+    <script type="text/javascript" src="js/jquery-3.7.1.min.js"></script>
     <script type="text/javascript" src="js/handlebars.runtime.min-v4.7.7.js"></script>
     <script type="text/javascript" src="js/typeahead.precompiled.js"></script>
     <script type="text/javascript" src="js/locations.precompiled.js"></script>
@@ -43,6 +43,16 @@
   </head>
   <body>
     <div class="container-fluid">
+
+      <div class="row mb-2">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">location</span>
+          </div>
+          <input id="place" type="text" class="form-control" aria-label="location" placeholder="Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA">
+        </div>
+      </div>
+
       <div class="row mb-2">
         <div class="input-group">
           <div class="input-group-prepend">
@@ -69,18 +79,6 @@
             <span class="input-group-text">longitude</span>
           </div>
           <input type="text" aria-label="longitude" class="form-control" id="longitude" placeholder="-122.0841883">
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="input-group">
-          <div class="input-group-prepend">
-            <span class="input-group-text">location</span>
-          </div>
-          <input id="place" type="text" class="form-control" aria-label="location" placeholder="Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA">
-          <div class="input-group-append">
-            <button class="btn btn-primary" type="button" id="button-geocode">geocode</button>
-          </div>
         </div>
 
         <div class="input-group">

@@ -45,6 +45,60 @@ function checkEnabled() {
   }
 }
 
+var acEngine;
+function initEngine() {
+  if (acEngine) {
+    acEngine.clearRemoteCache();
+    acEngine.clear();
+  }
+  acEngine = new Bloodhound({
+    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    remote: {
+      wildcard: '%QUERY',
+      url: `https://www.google.com/s?tbm=map&suggest=p&gs_ri=maps&gl=${background.settings.gl}&hl=${background.settings.hl}&authuser=0&q=%QUERY&ech=6&pb=%212i5%214m12%211m3%211d94818581.28087418%212d-20.23133860264248%213d42.377446969366396%212m3%211f0%212f0%213f0%213m2%211i791%212i754%214f13.1%217i20%2110b1%2112m16%211m1%2118b1%212m3%215m1%216e2%2120e3%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2119m4%212m3%211i360%212i120%214i8%2120m57%212m2%211i203%212i100%213m2%212i4%215b1%216m6%211m2%211i86%212i86%211m2%211i408%212i240%217m42%211m3%211e1%212b0%213e3%211m3%211e2%212b1%213e2%211m3%211e2%212b0%213e3%211m3%211e8%212b0%213e3%211m3%211e10%212b0%213e3%211m3%211e10%212b1%213e2%211m3%211e9%212b1%213e2%211m3%211e10%212b0%213e3%211m3%211e10%212b1%213e2%211m3%211e10%212b0%213e4%212b1%214b1%219b0%2122m3%211sAsuuZfP-HeT-7_UPpJ6DwAQ%217e81%2117sAsuuZfP-HeT-7_UPpJ6DwAQ%3A64%2123m3%211e116%214b1%2110b1%2124m90%211m29%2113m9%212b1%213b1%214b1%216i1%218b1%219b1%2114b1%2120b1%2125b1%2118m18%213b1%214b1%215b1%216b1%219b1%2112b1%2113b1%2114b1%2115b1%2117b1%2120b1%2121b1%2122b1%2125b1%2127m1%211b0%2128b0%2131b0%2110m1%218e3%2111m1%213e1%2114m1%213b1%2117b1%2120m2%211e3%211e6%2124b1%2125b1%2126b1%2129b1%2130m1%212b1%2136b1%2139m3%212m2%212i1%213i1%2143b1%2152b1%2154m1%211b1%2155b1%2156m2%211b1%213b1%2165m5%213m4%211m3%211m2%211i224%212i298%2171b1%2172m17%211m5%211b1%212b1%213b1%215b1%217b1%214b1%218m8%211m6%214m1%211e1%214m1%211e3%214m1%211e4%213sother_user_reviews%219b1%2189b1%21103b1%21113b1%21117b1%21122m1%211b1%2126m4%212m3%211i80%212i92%214i8%2134m18%212b1%213b1%214b1%216b1%218m6%211b1%213b1%214b1%215b1%216b1%217b1%219b1%2112b1%2114b1%2120b1%2123b1%2125b1%2126b1%2137m1%211e81%2147m0%2149m7%213b1%216m2%211b1%212b1%217m2%211e3%212b1%2161b1%2167m2%217b1%2110b1%2169i678`,
+      rateLimitWait: 1,
+      transform: function (data) {
+        let arr = data.split('\n');
+
+        if (arr.length != 2) {
+          console.log('unknown response data');
+          return;
+        }
+
+        let suggests;
+        try {
+          let result = JSON.parse(arr[1]);
+          suggests = result?.[0]?.[1];
+        } catch (e) {
+          return [];
+        }
+
+        return suggests
+        .filter(item => {
+          return (item?.[22]?.[37] != 2) && (item?.[22]?.[11]);
+        })
+        .map(location => {
+          return {
+            latitude: parseFloat(location?.[22]?.[11]?.[2]),
+            longitude: parseFloat(location?.[22]?.[11]?.[3]),
+            location: location?.[22]?.[14]?.[0],
+            name: location?.[22]?.[14]?.[0],
+            placeId: location?.[22]?.[0]?.[27]
+          };
+        });
+
+      },
+      prepare: function(query, settings) {
+        settings.dataType = "text";
+        settings.url = settings.url.replace('%QUERY', query);
+        return settings;
+      }
+    }
+  });
+  acEngine.initialize(true);
+}
+
 var knownPlacesBloodhound;
 
 const google_sites = [
@@ -3194,51 +3248,38 @@ var regionsBloodhound = new Bloodhound({
 const regionsTemplate = Handlebars.templates.typeahead;
 const locationsTemplate = Handlebars.templates.locations;
 
-chrome.storage.sync.get("knownPlaces", function(result) {
-  if (result.knownPlaces) {
-    background.knownPlaces = result.knownPlaces;
-  }
-  knownPlacesBloodhound = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('location','name'),
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    identify: function(obj) { return obj.placeId; },
-    local: background.knownPlaces
-  });
-  $('#place').typeahead({
-    hint: true,
-    highlight: true,
-    minLength: 0,
-    limit: 10
+initEngine();
+$('#place').typeahead({
+  hint: true,
+  highlight: true,
+  minLength: 1,
+  limit: 4
+},
+{
+  limit: 4,
+  display: 'location',
+  name: 'locations',
+  source: function (q, sync, async) {
+    acEngine.search(q, sync, async);
   },
-  {
-    display: 'location',
-    name: 'locations',
-    source: knownPlacesBloodhound,
-    templates: {
-      suggestion: locationsTemplate
-    }
-  });
-  $('#place').bind('typeahead:select', function(ev, data) {
-    var lat = data.lat || data.latitude;
-    var lng = data.lng || data.longitude;
-    $('#latitude').val(lat);
-    $('#longitude').val(lng);
-    $('#place').val(data.location);
-    $('#hl').val(data.hl);
-    $('#gl').val(data.gl);
-    $('#regions').val(data.regions);
+  templates: {
+    suggestion: locationsTemplate
+  }
+}).bind('typeahead:select', function(ev, suggestion) {
+  $('#latitude').val(suggestion.latitude);
+  $('#longitude').val(suggestion.longitude);
+  $('#place').attr('placeholder', suggestion.name);
+  $('#place').typeahead('close');
+  $('#place').val('');
 
-    background.settings.latitude  = lat;
-    background.settings.longitude = lng;
-    background.settings.location  = data.location;
-    background.settings.hl = data.hl;
-    background.settings.gl = data.gl;
-    background.settings.regions = data.regions;
+  background.settings.latitude  = suggestion.latitude;
+  background.settings.longitude = suggestion.longitude;
+  background.settings.location  = suggestion.location;
+  background.settings.name  = suggestion.name;
+  background.settings.placeId  = suggestion.placeId;
 
-    // persist settings
-    background.settings.timestamp = new Date().getTime();
-    chrome.storage.sync.set({settings: background.settings});
-  });
+  background.settings.timestamp = new Date().getTime();
+  chrome.storage.sync.set({settings: background.settings});
 });
 
 function deleteUULE() {
@@ -3298,90 +3339,6 @@ function isLatLng(address) {
   };
 }
 
-function geocodeAddressSuggest() {
-  let geocodeURL = new URL('https://www.google.com/s?tbm=map&suggest=p&gs_ri=maps&gl=en&hl=US&authuser=0&q=90210&ech=6&pb=%212i5%214m12%211m3%211d94818581.28087418%212d-20.23133860264248%213d42.377446969366396%212m3%211f0%212f0%213f0%213m2%211i791%212i754%214f13.1%217i20%2110b1%2112m16%211m1%2118b1%212m3%215m1%216e2%2120e3%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2119m4%212m3%211i360%212i120%214i8%2120m57%212m2%211i203%212i100%213m2%212i4%215b1%216m6%211m2%211i86%212i86%211m2%211i408%212i240%217m42%211m3%211e1%212b0%213e3%211m3%211e2%212b1%213e2%211m3%211e2%212b0%213e3%211m3%211e8%212b0%213e3%211m3%211e10%212b0%213e3%211m3%211e10%212b1%213e2%211m3%211e9%212b1%213e2%211m3%211e10%212b0%213e3%211m3%211e10%212b1%213e2%211m3%211e10%212b0%213e4%212b1%214b1%219b0%2122m3%211sAsuuZfP-HeT-7_UPpJ6DwAQ%217e81%2117sAsuuZfP-HeT-7_UPpJ6DwAQ%3A64%2123m3%211e116%214b1%2110b1%2124m90%211m29%2113m9%212b1%213b1%214b1%216i1%218b1%219b1%2114b1%2120b1%2125b1%2118m18%213b1%214b1%215b1%216b1%219b1%2112b1%2113b1%2114b1%2115b1%2117b1%2120b1%2121b1%2122b1%2125b1%2127m1%211b0%2128b0%2131b0%2110m1%218e3%2111m1%213e1%2114m1%213b1%2117b1%2120m2%211e3%211e6%2124b1%2125b1%2126b1%2129b1%2130m1%212b1%2136b1%2139m3%212m2%212i1%213i1%2143b1%2152b1%2154m1%211b1%2155b1%2156m2%211b1%213b1%2165m5%213m4%211m3%211m2%211i224%212i298%2171b1%2172m17%211m5%211b1%212b1%213b1%215b1%217b1%214b1%218m8%211m6%214m1%211e1%214m1%211e3%214m1%211e4%213sother_user_reviews%219b1%2189b1%21103b1%21113b1%21117b1%21122m1%211b1%2126m4%212m3%211i80%212i92%214i8%2134m18%212b1%213b1%214b1%216b1%218m6%211b1%213b1%214b1%215b1%216b1%217b1%219b1%2112b1%2114b1%2120b1%2123b1%2125b1%2126b1%2137m1%211e81%2147m0%2149m7%213b1%216m2%211b1%212b1%217m2%211e3%212b1%2161b1%2167m2%217b1%2110b1%2169i678')
-
-  let address = $('#place').val();
-  let position = isLatLng(address);
-  if (position) {
-    $('#latitude').val(position.lat);
-    $('#longitude').val(position.lng);
-    $('#place').attr('placeholder', address);
-    $('#place').val('');
-    return;
-  }
-  if (address) {
-    geocodeURL.searchParams.set('q',  address.toLowerCase());
-    geocodeURL.searchParams.set('hl', background.settings.hl);
-    geocodeURL.searchParams.set('gl', background.settings.gl);
-
-    fetch(geocodeURL.href, {
-      method: 'GET'
-    })
-    .catch(function (error) {
-      console.error('Error:', error);
-    })
-    .then(response => response.text())
-    .then(function (data) {
-      parseGeocodeSuggestResult(data, address);
-    });
-  } else {
-    console.log('no address to geocode');
-  }
-}
-
-function parseGeocodeSuggestResult(data, address) {
-  let arr = data.split('\n');
-
-  if (arr.length != 2) {
-    console.log('unknown response data');
-    return;
-  }
-  let result = JSON.parse(arr[1]);
-
-  let suggests = result?.[0]?.[1];
-  if (!suggests) {
-    $('#place').prop('placeholder', 'no result found');
-    $('#place').val('');
-    return;
-  }
-
-  let location = suggests.find((item) => (item?.[22]?.[37] == 12));
-  if (!location) {
-    $('#place').prop('placeholder', 'no location found');
-    $('#place').val('');
-    return;
-  }
-  let latitude = parseFloat(location?.[22]?.[11]?.[2]);
-  let longitude = parseFloat(location?.[22]?.[11]?.[3]);
-
-  if (isNaN(latitude) || isNaN(longitude)) {
-    $('#place').prop('placeholder', 'lat/lng missing');
-    $('#place').val('');
-    return;
-  }
-
-  background.settings.name      = address;
-  background.settings.latitude  = latitude;
-  background.settings.longitude = longitude;
-  background.settings.location  = location?.[22]?.[14]?.[0] || address;
-  background.settings.placeId   = location?.[22]?.[0]?.[27];
-
-  $('#latitude').val(background.settings.latitude);
-  $('#longitude').val(background.settings.longitude);
-  $('#place').val(background.settings.location);
-
-  // persist settings
-  background.settings.timestamp = new Date().getTime();
-  chrome.storage.sync.set({settings: background.settings});
-
-  if (!background.knownPlaces.some(element => element.placeId === background.settings.placeId)) {
-    background.knownPlaces.push(background.settings);
-    knownPlacesBloodhound.add([background.settings]);
-    chrome.storage.sync.set({knownPlaces: background.knownPlaces});
-  }
-}
-
 var loadHandler = function() {
 
   $('#place').prop('placeholder', background.settings.location);
@@ -3426,9 +3383,5 @@ var loadHandler = function() {
     $('#regions').prop('placeholder', background.settings.regions);
     background.settings.timestamp = new Date().getTime();
     chrome.storage.sync.set({settings: background.settings});
-  });
-
-  $('#button-geocode').on('click', function() {
-    geocodeAddressSuggest();
   });
 };
