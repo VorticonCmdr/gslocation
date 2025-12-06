@@ -49,21 +49,66 @@ function checkEnabled() {
 
 let acEngine;
 function initEngine() {
-  if (acEngine) {
-    acEngine.clearRemoteCache();
-    acEngine.clear();
-  }
-  acEngine = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace("value"),
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    remote: {
-      wildcard: "%QUERY",
-      url: `https://photon.komoot.io/api/?q=%QUERY&limit=3&lang=${background.settings.hl}`,
-      rateLimitWait: 1,
-      transform: function (data) {
+  chrome.storage.sync.get("options", function(result) {
+    const useGoogle = result?.options?.useGoogleEndpoint || false;
+
+    if (acEngine) {
+      acEngine.clearRemoteCache();
+      acEngine.clear();
+    }
+
+    let remoteConfig;
+
+    if (useGoogle) {
+      remoteConfig = {
+        wildcard: "%QUERY",
+        url: `https://www.google.com/s?tbm=map&gs_ri=maps&suggest=p&authuser=0&hl=${background.settings.hl}&gl=${background.settings.gl}&q=%QUERY&ech=5&pb=%212i5%214m12%211m3%211d10427.76566217746%212d28.684810849999998%213d41.0094287%212m3%211f0%212f0%213f0%213m2%211i1066%212i665%214f13.1%217i20%2110b1%2112m25%211m5%2118b1%2130b1%2131m1%211b1%2134e1%212m4%215m1%216e2%2120e3%2139b1%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2146m1%211b0%2196b1%2199b1`,
+        rateLimitWait: 1,
+        transform: function (data) {
+          let arr = data.split('\n');
+
+          if (arr.length != 2) {
+            console.log('unknown response data');
+            return;
+          }
+
+          let suggests;
+          try {
+            let result = JSON.parse(arr[1]);
+            suggests = result?.[0]?.[1];
+          } catch (e) {
+            return [];
+          }
+
+          return suggests
+          .filter(item => {
+            return (item?.[22]?.[37] != 2) && (item?.[22]?.[11]);
+          })
+          .map(location => {
+            return {
+              latitude: parseFloat(location?.[22]?.[11]?.[2]),
+              longitude: parseFloat(location?.[22]?.[11]?.[3]),
+              location: location?.[22]?.[14]?.[0],
+              name: location?.[22]?.[14]?.[0],
+              placeId: location?.[22]?.[0]?.[27]
+            };
+          });
+        },
+        prepare: function(query, settings) {
+          settings.dataType = "text";
+          settings.url = `https://www.google.com/s?tbm=map&gs_ri=maps&suggest=p&authuser=0&hl=${background.settings.hl}&gl=${background.settings.gl}&q=${query}&ech=5&pb=%212i5%214m12%211m3%211d10427.76566217746%212d28.684810849999998%213d41.0094287%212m3%211f0%212f0%213f0%213m2%211i1066%212i665%214f13.1%217i20%2110b1%2112m25%211m5%2118b1%2130b1%2131m1%211b1%2134e1%212m4%215m1%216e2%2120e3%2139b1%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2146m1%211b0%2196b1%2199b1`;
+          return settings;
+        }
+      };
+    } else {
+      remoteConfig = {
+        wildcard: "%QUERY",
+        url: `https://photon.komoot.io/api/?q=%QUERY&limit=3`,
+        rateLimitWait: 1,
+        transform: function (data) {
         if (data?.features?.length < 1) {
           console.log("missing location data");
-          return;
+          return [];
         }
 
         return data.features
@@ -143,14 +188,21 @@ function initEngine() {
             };
           });
       },
-      prepare: function (query, settings) {
-        settings.dataType = "json";
-        settings.url = settings.url.replace("%QUERY", query);
-        return settings;
-      },
-    },
+        prepare: function (query, settings) {
+          settings.dataType = "json";
+          settings.url = settings.url.replace("%QUERY", query);
+          return settings;
+        }
+      };
+    }
+
+    acEngine = new Bloodhound({
+      datumTokenizer: Bloodhound.tokenizers.obj.whitespace("value"),
+      queryTokenizer: Bloodhound.tokenizers.whitespace,
+      remote: remoteConfig
+    });
+    acEngine.initialize(true);
   });
-  acEngine.initialize(true);
 }
 
 var knownPlacesBloodhound;
