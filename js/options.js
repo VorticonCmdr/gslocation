@@ -2,7 +2,8 @@ const background = {
   options: {
     consent: '',
     contextnumber: 3,
-    maxplaces: 100
+    maxplaces: 100,
+    useGoogleEndpoint: false
   },
   settings: {
     'latitude': 37.422388,
@@ -73,6 +74,12 @@ function getOptions() {
     $('#input-contextnumber').val(result['options']['contextnumber']);
     $('#input-maxplaces').val(result['options']['maxplaces']);
     $('#input-consent').val(result['options']['consent']);
+    $('#checkbox-use-google').prop('checked', result['options']['useGoogleEndpoint'] || false);
+
+    $('#checkbox-use-google').on('change', function() {
+      result['options']['useGoogleEndpoint'] = $(this).prop('checked');
+      chrome.storage.sync.set(result);
+    });
 
     $('#button-contextnumber').on('click', function() {
       result['options']['contextnumber'] = parseInt($('#input-contextnumber').val()) || 3;
