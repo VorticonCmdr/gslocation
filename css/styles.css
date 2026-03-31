@@ -1,0 +1,306 @@
+/* --- Minimalist CSS Theme System --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+:root {
+  /* Light Theme (Default) */
+  --bg-color: #f8f9fa;
+  --panel-bg: #ffffff;
+  --text-main: #2d3436;
+  --text-muted: #4a4e50;
+  --border-color: #d1d8dc;
+  --accent-color: #0984e3;
+  --accent-glow: rgba(9, 132, 227, 0.2);
+  --success-color: #27ae60;
+  --danger-color: #d63031;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --font-family: 'Inter', sans-serif;
+}
+
+body.dark-mode {
+  /* Dark Theme */
+  --bg-color: #121212;
+  --panel-bg: #1e1e1e;
+  --text-main: #e0e0e0;
+  --text-muted: #a0a0a0;
+  --border-color: #333333;
+  --accent-color: #3498db;
+  --accent-glow: rgba(52, 152, 219, 0.3);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Core Styles --- */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.popup-mode {
+  width: 500px;
+}
+
+.container-fluid, .container {
+  padding: 1.5rem !important;
+}
+
+/* --- Minimalist Panels --- */
+.card, .panel, .row {
+  background-color: transparent !important;
+  border-radius: 12px;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem !important;
+  color: var(--text-main) !important;
+}
+
+/* --- Clean Inputs --- */
+.input-group {
+  box-shadow: var(--shadow);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  overflow: visible !important; /* Allow typeahead dropdown to show */
+}
+
+.input-group-text {
+  background-color: var(--panel-bg) !important;
+  border: none !important;
+  border-right: 1px solid var(--border-color) !important;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.6rem 0.75rem !important;
+  white-space: nowrap;
+}
+
+.input-group-prepend .input-group-text {
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+}
+
+.form-control {
+  background-color: var(--bg-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  color: var(--text-main) !important;
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem !important;
+  transition: all 0.25s ease;
+}
+
+.form-control:focus {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 3px var(--accent-glow) !important;
+  outline: none;
+}
+
+/* Remove inner borders inside input-group — only outer group border shows */
+.input-group .form-control {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.input-group .form-control:focus {
+  box-shadow: none !important;
+}
+
+.form-control::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.9 !important;
+}
+
+/* --- Actions & Buttons --- */
+.btn {
+  border-radius: 8px !important;
+  font-weight: 600;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: calc(1.5em + 1rem + 2px); /* Match Bootstrap default form-control height */
+}
+
+/* Specific fix for the Options page utility buttons */
+#known-places-container .btn, 
+.section-header ~ .row .btn {
+  padding: 0.25rem 0.75rem !important;
+  font-size: 0.85rem;
+  height: auto !important;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-outline-warning {
+  color: #f1c40f !important;
+  border-color: #f1c40f !important;
+}
+
+.btn-outline-warning:hover {
+  background-color: #f1c40f !important;
+  color: #fff !important;
+}
+
+/* --- Toggle Switch (iOS Style) --- */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px; width: 18px;
+  left: 3px; bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* --- Favorites List --- */
+#favorites-container .list-group-item {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  margin-bottom: 5px;
+  border-radius: 8px !important;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+#favorites-container .list-group-item:hover {
+  background: var(--bg-color);
+}
+
+/* --- Twitter Typeahead Fixes --- */
+.twitter-typeahead {
+  flex: 1 1 auto !important;
+  display: flex !important;
+}
+
+.tt-menu {
+  width: 100% !important;
+  background-color: var(--panel-bg) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); /* More prominent shadow for dropdowns */
+  color: var(--text-main);
+  z-index: 1000 !important;
+  margin-top: 5px;
+  overflow: hidden; /* Keep suggestions within menu radius */
+}
+
+.tt-suggestion {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s ease;
+}
+
+.tt-suggestion:last-child {
+  border-bottom: none;
+}
+
+.tt-suggestion:hover, .tt-suggestion.tt-cursor {
+  background-color: var(--accent-glow) !important;
+  color: var(--accent-color);
+}
+
+.section-localization {
+  padding-bottom: 0.5rem !important;
+}
+
+.input-group {
+  align-items: stretch !important;
+}
+
+.input-group-append .btn,
+.input-group-append .input-group-text {
+  border: none !important;
+  border-left: 1px solid var(--border-color) !important;
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+}
+
+/* Correctly target the Typeahead wrapper and the underlying input */
+.input-group > .twitter-typeahead {
+  flex: 1 1 auto !important;
+}
+
+.input-group > .twitter-typeahead .form-control {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* --- Theme Toggle Button --- */
+#theme-toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.btn-theme-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color);
+  background-color: var(--panel-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  padding: 0;
+  line-height: 1;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-theme-toggle:hover {
+  border-color: var(--accent-color);
+  transform: scale(1.1);
+}
+
+.btn-theme-toggle:active {
+  transform: scale(0.93);
+}
+
+/* Light mode: show moon icon (click to switch to dark) */
+.btn-theme-toggle .theme-icon-sun { display: none; }
+.btn-theme-toggle .theme-icon-moon { display: block; }
+
+/* Dark mode: show sun icon (click to switch to light) */
+body.dark-mode .btn-theme-toggle .theme-icon-moon { display: none; }
+body.dark-mode .btn-theme-toggle .theme-icon-sun { display: block; }

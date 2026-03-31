@@ -33,23 +33,29 @@ chrome.storage.sync.get(null, (data) => {
   if (data.knownPlaces && data.knownPlaces.length > 0) {
     Object.assign(background.knownPlaces, data.knownPlaces);
   }
+  
+  // Load and apply theme
+  if (data.theme === 'dark') {
+    $('body').addClass('dark-mode');
+  }
+
   checkEnabled();
   loadHandler();
 });
 
 function checkEnabled() {
   if (background.settings.enabled) {
-    $("#enableText").addClass("text-danger");
-    $("#enableText").attr("placeholder", "fake location enabled");
+    $("#enableText").text("ACTIVE").css("color", "var(--success-color)");
+    $("#enabled").prop("checked", true);
   } else {
-    $("#enableText").removeClass("text-danger");
-    $("#enableText").attr("placeholder", "enable overwrite");
+    $("#enableText").text("OFF").css("color", "var(--text-muted)");
+    $("#enabled").prop("checked", false);
   }
 }
 
 let acEngine;
 function initEngine() {
-  chrome.storage.sync.get("options", function(result) {
+  chrome.storage.sync.get("options", function (result) {
     const useGoogle = result?.options?.useGoogleEndpoint || false;
 
     if (acEngine) {
@@ -81,20 +87,20 @@ function initEngine() {
           }
 
           return suggests
-          .filter(item => {
-            return (item?.[22]?.[37] != 2) && (item?.[22]?.[11]);
-          })
-          .map(location => {
-            return {
-              latitude: parseFloat(location?.[22]?.[11]?.[2]),
-              longitude: parseFloat(location?.[22]?.[11]?.[3]),
-              location: location?.[22]?.[14]?.[0],
-              name: location?.[22]?.[14]?.[0],
-              placeId: location?.[22]?.[0]?.[27]
-            };
-          });
+            .filter(item => {
+              return (item?.[22]?.[37] != 2) && (item?.[22]?.[11]);
+            })
+            .map(location => {
+              return {
+                latitude: parseFloat(location?.[22]?.[11]?.[2]),
+                longitude: parseFloat(location?.[22]?.[11]?.[3]),
+                location: location?.[22]?.[14]?.[0],
+                name: location?.[22]?.[14]?.[0],
+                placeId: location?.[22]?.[0]?.[27]
+              };
+            });
         },
-        prepare: function(query, settings) {
+        prepare: function (query, settings) {
           settings.dataType = "text";
           settings.url = `https://www.google.com/s?tbm=map&gs_ri=maps&suggest=p&authuser=0&hl=${background.settings.hl}&gl=${background.settings.gl}&q=${query}&ech=5&pb=%212i5%214m12%211m3%211d10427.76566217746%212d28.684810849999998%213d41.0094287%212m3%211f0%212f0%213f0%213m2%211i1066%212i665%214f13.1%217i20%2110b1%2112m25%211m5%2118b1%2130b1%2131m1%211b1%2134e1%212m4%215m1%216e2%2120e3%2139b1%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2146m1%211b0%2196b1%2199b1`;
           return settings;
@@ -106,88 +112,89 @@ function initEngine() {
         url: `https://photon.komoot.io/api/?q=%QUERY&limit=3`,
         rateLimitWait: 1,
         transform: function (data) {
-        if (data?.features?.length < 1) {
-          console.log("missing location data");
-          return [];
-        }
+          if (data?.features?.length < 1) {
+            console.log("missing location data");
+            return [];
+          }
 
-        return data.features
-          .filter((item) => {
-            return item?.geometry?.type == "Point" && item?.properties?.type;
-          })
-          .map((location) => {
-            let nameArray = [
-              location?.properties?.name,
-              location?.properties?.country,
-            ];
-            switch (location.properties.type) {
-              case "district":
-                nameArray = [
-                  location?.properties?.name,
-                  location?.properties?.city,
-                  location?.properties?.country,
-                ];
-                break;
-              case "street":
-                nameArray = [
-                  location?.properties?.name,
-                  location?.properties?.city,
-                  location?.properties?.country,
-                ];
-                break;
-              case "house":
-                nameArray = [
-                  location?.properties?.street,
-                  location?.properties?.housenumber,
-                  location?.properties?.city,
-                  location?.properties?.state,
-                  location?.properties?.country,
-                ];
-                break;
-              case "locality":
-                nameArray = [
-                  location?.properties?.name,
-                  location?.properties?.city,
-                  location?.properties?.state,
-                  location?.properties?.country,
-                ];
-                break;
-              case "city":
-                nameArray = [
-                  location?.properties?.name,
-                  location?.properties?.state,
-                  location?.properties?.country,
-                ];
-                break;
-              case "county":
-                nameArray = [
-                  location?.properties?.name,
-                  location?.properties?.state,
-                  location?.properties?.country,
-                ];
-                break;
-              case "state":
-                nameArray = [
-                  location?.properties?.name,
-                  location?.properties?.country,
-                ];
-                break;
-              case "country":
-                nameArray = [location?.properties?.name];
-                break;
-              default:
-                console.info(location.properties);
-            }
-            let name = nameArray.filter((item) => item).join(", ");
-            return {
-              latitude: location?.geometry?.coordinates?.[1] || 0,
-              longitude: location?.geometry?.coordinates?.[0] || 0,
-              location: name,
-              name: name,
-              placeId: location?.properties?.osm_id,
-            };
-          });
-      },
+          return data.features
+            .filter((item) => {
+              return item?.geometry?.type == "Point" && item?.properties?.type;
+            })
+            .map((location) => {
+              let nameArray = [
+                location?.properties?.name,
+                location?.properties?.country,
+              ];
+              switch (location.properties.type) {
+                case "district":
+                  nameArray = [
+                    location?.properties?.name,
+                    location?.properties?.city,
+                    location?.properties?.country,
+                  ];
+                  break;
+                case "street":
+                  nameArray = [
+                    location?.properties?.name,
+                    location?.properties?.city,
+                    location?.properties?.country,
+                  ];
+                  break;
+                case "house":
+                  nameArray = [
+                    location?.properties?.street,
+                    location?.properties?.housenumber,
+                    location?.properties?.city,
+                    location?.properties?.state,
+                    location?.properties?.country,
+                  ];
+                  break;
+                case "locality":
+                  nameArray = [
+                    location?.properties?.name,
+                    location?.properties?.city,
+                    location?.properties?.state,
+                    location?.properties?.country,
+                  ];
+                  break;
+                case "city":
+                  nameArray = [
+                    location?.properties?.name,
+                    location?.properties?.state,
+                    location?.properties?.country,
+                  ];
+                  break;
+                case "county":
+                  nameArray = [
+                    location?.properties?.name,
+                    location?.properties?.state,
+                    location?.properties?.country,
+                  ];
+                  break;
+                case "state":
+                  nameArray = [
+                    location?.properties?.name,
+                    location?.properties?.country,
+                  ];
+                  break;
+                case "country":
+                  nameArray = [location?.properties?.name];
+                  break;
+                default:
+                  console.info(location.properties);
+              }
+              let name = nameArray.filter((item) => item).join(", ");
+              return {
+                latitude: location?.geometry?.coordinates?.[1] || 0,
+                longitude: location?.geometry?.coordinates?.[0] || 0,
+                location: name,
+                name: name,
+                placeId: location?.properties?.osm_id,
+                gl: location?.properties?.countrycode?.toUpperCase()
+              };
+            });
+        },
         prepare: function (query, settings) {
           settings.dataType = "json";
           settings.url = settings.url.replace("%QUERY", query);
@@ -3380,7 +3387,7 @@ $("#place")
   .bind("typeahead:select", function (ev, suggestion) {
     $("#latitude").val(suggestion.latitude);
     $("#longitude").val(suggestion.longitude);
-    $("#place").attr("placeholder", suggestion.name);
+    $("#place").prop("placeholder", suggestion.name);
     $("#place").typeahead("close");
     $("#place").val("");
 
@@ -3390,9 +3397,31 @@ $("#place")
     background.settings.name = suggestion.name;
     background.settings.placeId = suggestion.placeId;
 
+    // Conditionally update GL based on the "Sync" checkbox
+    if ($("#sync-gl").prop("checked") && suggestion.gl) {
+      background.settings.gl = suggestion.gl;
+      $("#gl").val(suggestion.gl);
+      
+      // Update region display text if available
+      var site = google_sites.find(s => s.gl === suggestion.gl);
+      if (site) {
+        background.settings.regions = site.name + " - " + site.lang;
+        $("#regions").prop("placeholder", background.settings.regions);
+        $("#regions").val("");
+      }
+    } else {
+      // Default to US if sync is off
+      background.settings.gl = "US";
+      background.settings.regions = "United States - English";
+      $("#gl").val("US");
+      $("#regions").prop("placeholder", background.settings.regions);
+      $("#regions").val("");
+    }
+
     background.settings.timestamp = new Date().getTime();
     chrome.storage.sync.set({ settings: background.settings });
   });
+
 
 function deleteUULE() {
   chrome.cookies.getAll({ name: "UULE" }, function (cookies) {
@@ -3406,16 +3435,21 @@ function deleteUULE() {
   });
 }
 
+function updateCustomLocation() {
+  background.settings.location = "Custom Location";
+  background.settings.name = "Custom Location";
+  background.settings.placeId = "custom";
+  $("#place").prop("placeholder", "Custom Location");
+}
+
 function enabler() {
   if ($("#enabled").prop("checked")) {
     background.settings.enabled = true;
-    $("#enableText").addClass("text-danger");
-    $("#enableText").attr("placeholder", "fake location enabled");
+    checkEnabled();
   } else {
     deleteUULE();
     background.settings.enabled = false;
-    $("#enableText").removeClass("text-danger");
-    $("#enableText").attr("placeholder", "enable overwrite");
+    checkEnabled();
   }
   // persist settings
   background.settings.timestamp = new Date().getTime();
@@ -3439,7 +3473,7 @@ function isLatLng(address) {
     return false;
   }
   var lng = parseFloat(parts[1]);
-  if (!isFloat(lat)) {
+  if (!isFloat(lng)) {
     return false;
   }
   if (isNaN(lng)) {
@@ -3451,7 +3485,7 @@ function isLatLng(address) {
   };
 }
 
-var loadHandler = function () {
+function loadHandler() {
   $("#place").prop("placeholder", background.settings.location);
   $("#latitude").prop("placeholder", background.settings.latitude);
   $("#longitude").prop("placeholder", background.settings.longitude);
@@ -3460,16 +3494,108 @@ var loadHandler = function () {
   $("#regions").prop("placeholder", background.settings.regions);
   $("#enabled").change(enabler);
 
+  $("#sync-gl").on("change", function() {
+    chrome.storage.sync.set({ "sync-gl": $(this).prop("checked") });
+  });
+
+  chrome.storage.sync.get("sync-gl", function(res) {
+    if (res["sync-gl"] !== undefined) {
+      $("#sync-gl").prop("checked", res["sync-gl"]);
+    }
+  });
+
+  // Smart-paste & coordinate support
+  $("#longitude").on("input", function () {
+    var val = $(this).val();
+    if (val.includes(",")) {
+      var parts = val.split(",");
+      var lat = parts[0].trim();
+      var lng = parts[1].trim();
+      
+      $("#latitude").val(lat);
+      $(this).val(lng);
+      
+      background.settings.latitude = lat;
+      background.settings.longitude = lng;
+      updateCustomLocation();
+      background.settings.timestamp = new Date().getTime();
+      chrome.storage.sync.set({ settings: background.settings });
+    } else {
+      background.settings.longitude = val;
+      updateCustomLocation();
+      background.settings.timestamp = new Date().getTime();
+      chrome.storage.sync.set({ settings: background.settings });
+    }
+  });
+
+  $("#latitude").on("input", function () {
+    var val = $(this).val();
+    if (val.includes(",")) {
+      var parts = val.split(",");
+      var lat = parts[0].trim();
+      var lng = parts[1].trim();
+      
+      $(this).val(lat);
+      $("#longitude").val(lng);
+      
+      background.settings.latitude = lat;
+      background.settings.longitude = lng;
+      updateCustomLocation();
+      background.settings.timestamp = new Date().getTime();
+      chrome.storage.sync.set({ settings: background.settings });
+    } else {
+      background.settings.latitude = val;
+      updateCustomLocation();
+      background.settings.timestamp = new Date().getTime();
+      chrome.storage.sync.set({ settings: background.settings });
+    }
+  });
+
+  // Manual entry of languages
+  $("#hl, #gl").on("change", function () {
+    background.settings.hl = $("#hl").val() || $("#hl").attr("placeholder") || "en";
+    background.settings.gl = $("#gl").val() || $("#gl").attr("placeholder") || "US";
+    background.settings.timestamp = new Date().getTime();
+    chrome.storage.sync.set({ settings: background.settings });
+  });
+
+
+  $("#btn-favorite").on("click", function () {
+    var currentName = $("#place").val().trim() || $("#place").attr("placeholder").trim();
+    if (currentName === "Google Building 40...") currentName = "";
+
+    var locName = prompt("Enter a name for this custom location (Favorite):", currentName);
+    if (!locName) return; // Cancelled
+
+    // Update settings with the explicit custom name
+    background.settings.location = locName;
+    background.settings.name = locName;
+    background.settings.placeId = "fav_" + new Date().getTime(); // ensure unique placeId
+    background.settings.timestamp = new Date().getTime();
+
+    // Save to knownPlaces array
+    var newFavorite = Object.assign({}, background.settings);
+    // Remove if exactly same placeId exists (unlikely given timestamp, but good practice)
+    background.knownPlaces = background.knownPlaces.filter(p => p.placeId !== newFavorite.placeId);
+
+    // Unshift to put it at the top of the context menu
+    background.knownPlaces.unshift(newFavorite);
+
+    chrome.storage.sync.set({
+      settings: background.settings,
+      knownPlaces: background.knownPlaces
+    }, function () {
+      $("#place").prop("placeholder", locName);
+      $("#place").val("");
+      alert("⭐ Saved '" + locName + "' to Favorites!");
+      renderFavorites();
+    });
+  });
+
   var enabled = document.querySelector("#enabled");
   enabled.checked = background.settings.enabled;
 
-  if (background.settings.enabled) {
-    $("#enableText").addClass("text-danger");
-    $("#enableText").attr("placeholder", "fake location enabled");
-  } else {
-    $("#enableText").removeClass("text-danger");
-    $("#enableText").attr("placeholder", "enable overwrite");
-  }
+  checkEnabled();
 
   $("#regions").typeahead(
     {
@@ -3498,5 +3624,72 @@ var loadHandler = function () {
     $("#regions").prop("placeholder", background.settings.regions);
     background.settings.timestamp = new Date().getTime();
     chrome.storage.sync.set({ settings: background.settings });
+  });
+
+  function renderFavorites() {
+    var container = $("#favorites-container");
+    container.empty();
+
+    // The very first item is often the default "Google Building 40" if never modified.
+    // If it's the only one, users might not think of it as a favorite they saved explicitly,
+    // but returning it is fine.
+    if (!background.knownPlaces || background.knownPlaces.length === 0) {
+      container.append('<div class="list-group-item text-muted">No favorites saved yet.</div>');
+      return;
+    }
+
+    background.knownPlaces.forEach(function (place, index) {
+      var item = $('<button type="button" class="list-group-item list-group-item-action py-1 px-2 d-flex justify-content-between align-items-center">');
+
+      var nameSpan = $('<span>').text(place.name || place.location || "Unknown Location");
+      var deleteBtn = $('<span style="cursor:pointer; color:red;" title="Remove this favorite">&times;</span>');
+
+      deleteBtn.on("click", function (e) {
+        e.stopPropagation();
+        background.knownPlaces.splice(index, 1);
+        chrome.storage.sync.set({ knownPlaces: background.knownPlaces }, function () {
+          renderFavorites();
+        });
+      });
+
+      item.on("click", function () {
+        background.settings.latitude = place.latitude;
+        background.settings.longitude = place.longitude;
+        background.settings.location = place.location;
+        background.settings.name = place.name;
+        background.settings.placeId = place.placeId;
+        background.settings.hl = place.hl;
+        background.settings.gl = place.gl;
+        background.settings.timestamp = new Date().getTime();
+
+        chrome.storage.sync.set({ settings: background.settings }, function () {
+          $("#place").prop("placeholder", place.name || place.location);
+          $("#latitude").val(place.latitude);
+          $("#longitude").val(place.longitude);
+          $("#hl").val(place.hl);
+          $("#gl").val(place.gl);
+          $("#enabled").prop("checked", true);
+          enabler();
+        });
+      });
+
+      item.append(nameSpan).append(deleteBtn);
+      container.append(item);
+    });
+  }
+
+  renderFavorites();
+
+  $("#btn-toggle-favorites").on("click", function () {
+    $("#favoritesList").slideToggle("fast");
+    var span = $("#fav-toggle-icon");
+    span.text(span.text() === "▼" ? "▲" : "▼");
+  });
+
+  // Theme Toggle Listener
+  $("#theme-toggle-btn").on("click", function() {
+    $('body').toggleClass('dark-mode');
+    const isDark = $('body').hasClass('dark-mode');
+    chrome.storage.sync.set({ theme: isDark ? 'dark' : 'light' });
   });
 };

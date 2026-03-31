@@ -1,96 +1,118 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8"/>
-    <title>gs location changer</title>
-    <link rel="stylesheet" href="css/bootstrap.min.v4.6.1.css">
-    <style>
-      body {
-        width: 490px;
-        padding: 1em;
-      }
-      .twitter-typeahead {
-        width: 1%;
-        flex: 1 1 auto;
-      }
-      .tt-menu {
-        width: 100%;
-      }
-      .tt-menu,.typeahead {
-        background-color: #FFFFFF;
-      }
-      .tt-suggestion {
-        cursor: default;
-        padding: 0 8px;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-        line-height: 30px;
-        text-align: left;
-        border-top: 1px solid #e6e6e6;
-        margin-bottom: 0;
-      }
-      .text-danger::placeholder {
-        color: #dc3545!important;
-      }
-    </style>
-    <script type="text/javascript" src="js/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" src="js/handlebars.runtime.min-v4.7.7.js"></script>
-    <script type="text/javascript" src="js/typeahead.precompiled.js"></script>
-    <script type="text/javascript" src="js/locations.precompiled.js"></script>
-    <script type="text/javascript" src="js/typeahead.bundle.min.0.11.1.js"></script>
 
-  </head>
-  <body>
-    <div class="container-fluid">
+<head>
+  <meta charset="utf-8" />
+  <title>gs location changer</title>
+  <link rel="stylesheet" href="css/bootstrap.min.v4.6.1.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="text/javascript" src="js/jquery-3.7.1.min.js"></script>
+  <script type="text/javascript" src="js/handlebars.runtime.min-v4.7.7.js"></script>
+  <script type="text/javascript" src="js/typeahead.precompiled.js"></script>
+  <script type="text/javascript" src="js/locations.precompiled.js"></script>
+  <script type="text/javascript" src="js/typeahead.bundle.min.0.11.1.js"></script>
+</head>
 
-      <div class="row mb-2">
-        <div class="input-group">
-          <div class="input-group-prepend">
-            <span class="input-group-text">location</span>
-          </div>
-          <input id="place" type="text" class="form-control" aria-label="location" placeholder="Google Building 40, Amphitheatre Parkway, Mountain View, CA, USA">
+<body class="popup-mode">
+  <div class="container-fluid">
+    <!-- Location Row -->
+    <div class="row px-0 border-0 shadow-none bg-transparent mb-2">
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Location</span>
+        </div>
+        <input id="place" type="text" class="form-control" aria-label="location" placeholder="Search for a place...">
+        <div class="input-group-append">
+          <button class="btn btn-outline-warning" type="button" id="btn-favorite" title="Save to Favorites">⭐
+            Save</button>
         </div>
       </div>
+    </div>
 
-      <div class="row mb-2">
+    <div class="row section-localization mt-1 px-0 border-0 shadow-none bg-transparent">
+      <div class="col-6 pl-0 pr-1">
         <div class="input-group">
           <div class="input-group-prepend">
-            <span class="input-group-text">host language</span>
+            <span class="input-group-text" style="min-width: 60px;">Lang</span>
           </div>
-          <input type="text" aria-label="host language" class="form-control" id="hl" placeholder="en">
-          <div class="input-group-prepend">
-            <span class="input-group-text">geo location</span>
-          </div>
-          <input type="text" aria-label="geolocation" class="form-control" id="gl" placeholder="US">
-        </div>
-        <div class="input-group">
-          <input id="regions" class="typeahead form-control" autocomplete="off" type="text" aria-hidden="true" placeholder="select language &amp; location" />
+          <input type="text" id="hl" class="form-control" placeholder="en">
         </div>
       </div>
-
-      <div class="row mb-2">
+      <div class="col-6 pr-0 pl-1">
         <div class="input-group">
           <div class="input-group-prepend">
-            <span class="input-group-text">latitude</span>
+            <span class="input-group-text" style="min-width: 45px;">GL</span>
           </div>
-          <input type="text" aria-label="latitude" class="form-control" id="latitude" placeholder="37.422388">
-          <div class="input-group-prepend">
-            <span class="input-group-text">longitude</span>
-          </div>
-          <input type="text" aria-label="longitude" class="form-control" id="longitude" placeholder="-122.0841883">
-        </div>
-
-        <div class="input-group">
-          <input id="enableText" class="form-control" type="text" placeholder="enable overwrite" readonly>
+          <input type="text" id="gl" class="form-control" placeholder="US">
           <div class="input-group-append">
-            <div class="input-group-text">
-              <input type="checkbox" aria-label="checkbox for enabling location overwrite" id="enabled">
+            <div class="input-group-text d-flex align-items-center"
+              style="border-radius: 0 8px 8px 0 !important; min-width: 75px; padding: 2px 4px !important;">
+              <input type="checkbox" id="sync-gl" checked title="Sync GL to City">
+              <span
+                style="font-size: 0.65rem; font-weight: 800; margin-left: 4px; color: var(--text-muted); letter-spacing: 0.05em;">SYNC</span>
             </div>
           </div>
         </div>
       </div>
+
+      <div class="col-6 pl-0 pr-1 mt-2">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text" style="min-width: 85px;">Latitude</span>
+          </div>
+          <input type="text" id="latitude" class="form-control" placeholder="0.000">
+        </div>
+      </div>
+      <div class="col-6 pr-0 pl-1 mt-2">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text" style="min-width: 85px;">Longitude</span>
+          </div>
+          <input type="text" id="longitude" class="form-control" placeholder="0.000">
+        </div>
+      </div>
+
+      <div class="col-12 px-0 mt-2 d-flex align-items-center">
+        <div style="flex-grow: 1;">
+          <input id="regions" class="typeahead form-control" autocomplete="off" type="text" aria-hidden="true"
+            placeholder="Select Google Region" />
+        </div>
+        <div class="ml-2 d-flex align-items-center">
+          <span id="enableText" class="mr-1"
+            style="white-space: nowrap; font-weight: 700; font-size: 0.65rem; text-transform: uppercase;">OFF</span>
+          <label class="switch mb-0">
+            <input type="checkbox" id="enabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
     </div>
-    <script type="text/javascript" src="js/popup.js"></script>
-  </body>
+
+    <!-- Bottom Actions Row (Favorites & Theme) -->
+    <div class="row px-0 mt-3 border-0 shadow-none bg-transparent d-flex align-items-center">
+      <div class="col-10 pl-0">
+        <button
+          class="btn btn-sm btn-outline-secondary w-100 text-left d-flex justify-content-between align-items-center"
+          type="button" id="btn-toggle-favorites" style="border-radius: 8px !important;">
+          <span>⭐ Favorite Locations</span>
+          <span id="fav-toggle-icon">▼</span>
+        </button>
+      </div>
+      <div class="col-2 pr-0 d-flex justify-content-end" id="theme-toggle-container">
+        <button id="theme-toggle-btn" class="btn-theme-toggle" title="Switch to dark / light mode">
+          <span class="theme-icon-sun">☀️</span>
+          <span class="theme-icon-moon">🌙</span>
+        </button>
+      </div>
+    </div>
+    <div id="favoritesList" style="display: none; max-height: 150px; overflow-y: auto;" class="mt-2">
+      <div class="list-group w-100" id="favorites-container">
+        <!-- Dynamically populated via popup.js -->
+      </div>
+    </div>
+
+  </div>
+  <script type="text/javascript" src="js/popup.js"></script>
+</body>
+
 </html>
