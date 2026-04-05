@@ -4,15 +4,23 @@
     <meta charset="utf-8"/>
     <title>gs location changer options</title>
     <link rel="stylesheet" href="css/bootstrap.min.v4.6.1.css">
+    <link rel="stylesheet" href="css/styles.css">
     <script type="text/javascript" src="js/jquery-3.7.1.min.js"></script>
     <script type="text/javascript" src="js/handlebars.runtime.min-v4.7.7.js"></script>
     <script type="text/javascript" src="js/knownplaces.precompiled.js"></script>
     <script type="text/javascript" src="js/options.js"></script>
+    <script>
+      // Sync theme on load
+      chrome.storage.sync.get('theme', (data) => {
+        if (data.theme === 'dark') document.body.classList.add('dark-mode');
+      });
+    </script>
   </head>
   <body>
-    <div class="container">
-      <div class="row">
-        <h1>gs location changer options</h1>
+    <div class="container py-5">
+      <div class="row section-header border-0 shadow-none bg-transparent mb-4">
+        <h1 style="font-weight: 800; letter-spacing: -0.02em;">Extension Options</h1>
+        <p class="text-muted">Manage your saved locations and global search preferences.</p>
       </div>
       <div class="row">
         <h2>settings</h2>
@@ -33,6 +41,14 @@
           <div class="input-group-append">
             <button class="btn btn-outline-secondary" type="button" id="button-maxplaces">set</button>
           </div>
+        </div>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <div class="input-group-text">
+              <input type="checkbox" id="checkbox-use-google" aria-label="use unofficial google autocomplete endpoint">
+            </div>
+          </div>
+          <input type="text" class="form-control" value="Use unofficial Google autocomplete endpoint (instead of Komoot)" readonly>
         </div>
       </div>
       <div class="row">
