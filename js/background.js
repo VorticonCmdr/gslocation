@@ -16,22 +16,6 @@ const settings = {
 };
 const knownPlaces = [settings];
 
-chrome.runtime.onStartup.addListener(function() {
-  chrome.storage.sync.get(null, (data) => {
-    if (data.settings) {
-      Object.assign(settings, data.settings);
-      checkEnabled();
-    }
-    if (data.options) {
-      Object.assign(options, data.options);
-    }
-    if (data.knownPlaces) {
-      Object.assign(knownPlaces, data.knownPlaces);
-      setupContextMenu(knownPlaces);
-    }
-  });
-});
-
 function genUULE() {
   var lat = Math.floor(settings.latitude*1e7) || 525109360;
   var lng = Math.floor(settings.longitude*1e7) || 134104990;
@@ -129,8 +113,11 @@ chrome.contextMenus.create({
   "title": "🚫 disable fake location",
   "id": "disable",
   "parentId": parent
-  //,"onclick": genericOnClick
 }, () => chrome.runtime.lastError);
+
+// Registered once, synchronously, at top level so Chrome reliably redelivers
+// clicks after the service worker is evicted and woken back up.
+chrome.contextMenus.onClicked.addListener(genericOnClick);
 
 function compareTimestamp(a, b) {
   if (!a.timestamp || !b.timestamp) {
@@ -164,15 +151,14 @@ function setupContextMenu(allPlaces) {
         chrome.contextMenus.create({"title": item.location, "id": item.placeId, "parentId": parent}, () => chrome.runtime.lastError);
       }
     });
-    chrome.contextMenus.onClicked.addListener(genericOnClick);
   });
 }
 
 function deleteUULE() {
   chrome.cookies.getAll({'name':'UULE'}, function(cookies) {
-    for (c in cookies) {
-      var cookie = cookies[c];
-      var url = 'https://'+cookie.domain+cookie.path;
+    for (const cookie of cookies) {
+      var domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain;
+      var url = 'https://'+domain+cookie.path;
       chrome.cookies.remove({'name':'UULE', 'url': url}, function(details) {
         console.log(details);
       });
@@ -194,3 +180,20 @@ function genericOnClick(info, tab) {
   settings.timestamp = new Date().getTime();
   chrome.storage.sync.set({settings: settings});
 }
+
+// Hydrate in-memory state from storage on every service worker start (install,
+// browser startup, or wake from idle) rather than only on chrome.runtime.onStartup,
+// which does not fire for the far more frequent MV3 service-worker respawns.
+chrome.storage.sync.get(null, (data) => {
+  if (data.settings) {
+    Object.assign(settings, data.settings);
+  }
+  if (data.options) {
+    Object.assign(options, data.options);
+  }
+  if (data.knownPlaces) {
+    Object.assign(knownPlaces, data.knownPlaces);
+  }
+  checkEnabled();
+  setupContextMenu(knownPlaces);
+});

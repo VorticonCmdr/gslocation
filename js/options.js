@@ -47,7 +47,10 @@ function getKnownPlaces() {
       document.getElementById('knownplaces').innerHTML = knownPlacesTemplate(result);
       $('.remove').on('click', function(event) {
         var placeid = $(event.target).data('placeid');
-        var index = result.knownPlaces.findIndex(place => place.placeId === placeid);
+        var index = result.knownPlaces.findIndex(place => String(place.placeId) === String(placeid));
+        if (index === -1) {
+          return;
+        }
         var removedPlace = result.knownPlaces.splice(index, 1);
         if (background.settings.placeId == removedPlace[0].placeId) {
           background.settings.enabled = false;

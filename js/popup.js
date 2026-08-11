@@ -3425,9 +3425,9 @@ $("#place")
 
 function deleteUULE() {
   chrome.cookies.getAll({ name: "UULE" }, function (cookies) {
-    for (c in cookies) {
-      var cookie = cookies[c];
-      var url = "https://" + cookie.domain + cookie.path;
+    for (const cookie of cookies) {
+      var domain = cookie.domain.startsWith(".") ? cookie.domain.substring(1) : cookie.domain;
+      var url = "https://" + domain + cookie.path;
       chrome.cookies.remove({ name: "UULE", url: url }, function (details) {
         //console.log(details);
       });
