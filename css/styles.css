@@ -42,6 +42,20 @@ body {
   width: 500px;
 }
 
+/* --- Popup vertical rhythm: uniform 0.5rem gaps, compact frame --- */
+.popup-mode .container-fluid {
+  padding: 1rem 1.25rem !important;
+}
+
+.popup-mode .row {
+  padding: 0.25rem 0;
+  margin-bottom: 0.25rem !important;
+}
+
+.popup-mode .section-localization {
+  padding-bottom: 0 !important;
+}
+
 .container-fluid, .container {
   padding: 1.5rem !important;
 }
@@ -300,6 +314,42 @@ input:checked + .slider:before {
 /* Light mode: show moon icon (click to switch to dark) */
 .btn-theme-toggle .theme-icon-sun { display: none; }
 .btn-theme-toggle .theme-icon-moon { display: block; }
+
+/* --- Search Provider Switch (segmented control) --- */
+.provider-switch {
+  display: flex;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.25rem;
+  gap: 0.25rem;
+  box-shadow: var(--shadow);
+}
+
+.provider-switch button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.provider-switch button:hover {
+  color: var(--text-main);
+}
+
+.provider-switch button.active {
+  background-color: var(--accent-color);
+  color: #fff;
+  box-shadow: 0 2px 6px var(--accent-glow);
+}
 
 /* Dark mode: show sun icon (click to switch to light) */
 body.dark-mode .btn-theme-toggle .theme-icon-moon { display: none; }

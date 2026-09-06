@@ -81,6 +81,12 @@ function getOptions() {
       chrome.storage.sync.set(result);
     });
 
+    chrome.storage.onChanged.addListener(function (changes, area) {
+      if (area === "sync" && changes.options && changes.options.newValue) {
+        $('#checkbox-use-google').prop('checked', !!changes.options.newValue.useGoogleEndpoint);
+      }
+    });
+
     $('#button-contextnumber').on('click', function() {
       result['options']['contextnumber'] = parseInt($('#input-contextnumber').val()) || 3;
       chrome.storage.sync.set(result);

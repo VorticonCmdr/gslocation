@@ -16,7 +16,7 @@
 <body class="popup-mode">
   <div class="container-fluid">
     <!-- Location Row -->
-    <div class="row px-0 border-0 shadow-none bg-transparent mb-2">
+    <div class="row px-0 border-0 shadow-none bg-transparent">
       <div class="input-group">
         <div class="input-group-prepend">
           <span class="input-group-text">Location</span>
@@ -29,7 +29,7 @@
       </div>
     </div>
 
-    <div class="row section-localization mt-1 px-0 border-0 shadow-none bg-transparent">
+    <div class="row section-localization px-0 border-0 shadow-none bg-transparent">
       <div class="col-6 pl-0 pr-1">
         <div class="input-group">
           <div class="input-group-prepend">
@@ -88,8 +88,16 @@
       </div>
     </div>
 
-    <!-- Bottom Actions Row (Favorites & Theme) -->
-    <div class="row px-0 mt-3 border-0 shadow-none bg-transparent d-flex align-items-center">
+    <!-- Search provider picker -->
+    <div class="row px-0 border-0 shadow-none bg-transparent">
+      <div class="col-12 px-0">
+        <div class="provider-switch" id="provider-switch">
+          <button type="button" data-provider="komoot">Komoot</button>
+          <button type="button" data-provider="google">Google Search</button>
+        </div>
+      </div>
+    </div>
+    <div class="row px-0 border-0 shadow-none bg-transparent d-flex align-items-center">
       <div class="col-10 pl-0">
         <button
           class="btn btn-sm btn-outline-secondary w-100 text-left d-flex justify-content-between align-items-center"

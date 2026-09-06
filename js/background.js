@@ -146,11 +146,11 @@ function setupContextMenu(allPlaces) {
     chrome.contextMenus.create({"title": "🚫 disable fake location", "id": "disable","parentId": parent}, () => chrome.runtime.lastError);
     chrome.contextMenus.create({"type": "separator", "id": "s1", "parentId": parent}, () => chrome.runtime.lastError);
     if (settings.enabled && settings.location) {
-      chrome.contextMenus.create({"title": "📍"+settings.location, "id": settings.placeId, "parentId": parent}, () => chrome.runtime.lastError);
+      chrome.contextMenus.create({"title": "📍"+settings.location, "id": String(settings.placeId), "parentId": parent}, () => chrome.runtime.lastError);
       chrome.contextMenus.create({"type": "separator", "id": "s2", "parentId": parent}, () => chrome.runtime.lastError);
     } else {
       if (settings.location) {
-        chrome.contextMenus.create({"title": settings.location, "id": settings.placeId, "parentId": parent}, () => chrome.runtime.lastError);
+        chrome.contextMenus.create({"title": settings.location, "id": String(settings.placeId), "parentId": parent}, () => chrome.runtime.lastError);
       }
     }
     contextPlaces.forEach(function (item) {
@@ -161,7 +161,7 @@ function setupContextMenu(allPlaces) {
         return;
       }
       if (item.placeId != settings.placeId) {
-        chrome.contextMenus.create({"title": item.location, "id": item.placeId, "parentId": parent}, () => chrome.runtime.lastError);
+        chrome.contextMenus.create({"title": item.location, "id": String(item.placeId), "parentId": parent}, () => chrome.runtime.lastError);
       }
     });
     chrome.contextMenus.onClicked.addListener(genericOnClick);

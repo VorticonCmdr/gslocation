@@ -54,6 +54,64 @@ function checkEnabled() {
 }
 
 let acEngine;
+
+const GOOGLE_PB_TEMPLATE = "%212i5%214m12%211m3%211d10427.76566217746%212d__LNG__%213d__LAT__%212m3%211f0%212f0%213f0%213m2%211i1066%212i665%214f13.1%217i20%2110b1%2112m25%211m5%2118b1%2130b1%2131m1%211b1%2134e1%212m4%215m1%216e2%2120e3%2139b1%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2146m1%211b0%2196b1%2199b1";
+
+function googleBiasCenter() {
+  var lat = parseFloat(background.settings.latitude);
+  var lng = parseFloat(background.settings.longitude);
+  if (!isFinite(lat) || lat < -90 || lat > 90) lat = 41.0094287;
+  if (!isFinite(lng) || lng < -180 || lng > 180) lng = 28.684810849999998;
+  return { lat: lat, lng: lng };
+}
+
+function buildGoogleSuggestUrl(query) {
+  var c = googleBiasCenter();
+  var pb = GOOGLE_PB_TEMPLATE.replace("__LNG__", String(c.lng)).replace("__LAT__", String(c.lat));
+  var q = (query === "%QUERY") ? "%QUERY" : encodeURIComponent(query);
+  return "https://www.google.com/s?tbm=map&gs_ri=maps&suggest=p&authuser=0&hl=" +
+    background.settings.hl + "&gl=" + background.settings.gl +
+    "&q=" + q + "&ech=5&pb=" + pb;
+}
+
+function parseGoogleSuggestText(data) {
+  var places = [];
+  var lines = String(data || "").split("\n");
+  var jsonLine = null;
+  for (var i = 0; i < lines.length; i++) {
+    var t = lines[i].trim();
+    if (t.charAt(0) === "[") { jsonLine = t; break; }
+  }
+  if (!jsonLine) return places;
+
+  var suggests = null;
+  try {
+    var result = JSON.parse(jsonLine);
+    suggests = result && result[0] && result[0][1];
+  } catch (e) {
+    return places;
+  }
+  if (!suggests || !suggests.length) return places;
+
+  return suggests
+    .filter(function (item) {
+      var inner = item && item[22];
+      if (!inner || inner[37] === 2 || !inner[11]) return false;
+      var lat = parseFloat(inner[11] && inner[11][2]);
+      var lng = parseFloat(inner[11] && inner[11][3]);
+      return inner[14] && inner[14][0] && isFinite(lat) && isFinite(lng);
+    })
+    .map(function (location) {
+      return {
+        latitude: parseFloat(location[22][11][2]),
+        longitude: parseFloat(location[22][11][3]),
+        location: location[22][14][0],
+        name: location[22][14][0],
+        placeId: location[22][0] && location[22][0][27]
+      };
+    });
+}
+
 function initEngine() {
   chrome.storage.sync.get("options", function (result) {
     const useGoogle = result?.options?.useGoogleEndpoint || false;
@@ -68,41 +126,14 @@ function initEngine() {
     if (useGoogle) {
       remoteConfig = {
         wildcard: "%QUERY",
-        url: `https://www.google.com/s?tbm=map&gs_ri=maps&suggest=p&authuser=0&hl=${background.settings.hl}&gl=${background.settings.gl}&q=%QUERY&ech=5&pb=%212i5%214m12%211m3%211d10427.76566217746%212d28.684810849999998%213d41.0094287%212m3%211f0%212f0%213f0%213m2%211i1066%212i665%214f13.1%217i20%2110b1%2112m25%211m5%2118b1%2130b1%2131m1%211b1%2134e1%212m4%215m1%216e2%2120e3%2139b1%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2146m1%211b0%2196b1%2199b1`,
-        rateLimitWait: 1,
+        url: buildGoogleSuggestUrl("%QUERY"),
+        rateLimitWait: 200,
         transform: function (data) {
-          let arr = data.split('\n');
-
-          if (arr.length != 2) {
-            console.log('unknown response data');
-            return;
-          }
-
-          let suggests;
-          try {
-            let result = JSON.parse(arr[1]);
-            suggests = result?.[0]?.[1];
-          } catch (e) {
-            return [];
-          }
-
-          return suggests
-            .filter(item => {
-              return (item?.[22]?.[37] != 2) && (item?.[22]?.[11]);
-            })
-            .map(location => {
-              return {
-                latitude: parseFloat(location?.[22]?.[11]?.[2]),
-                longitude: parseFloat(location?.[22]?.[11]?.[3]),
-                location: location?.[22]?.[14]?.[0],
-                name: location?.[22]?.[14]?.[0],
-                placeId: location?.[22]?.[0]?.[27]
-              };
-            });
+          return parseGoogleSuggestText(data).slice(0, 5);
         },
         prepare: function (query, settings) {
           settings.dataType = "text";
-          settings.url = `https://www.google.com/s?tbm=map&gs_ri=maps&suggest=p&authuser=0&hl=${background.settings.hl}&gl=${background.settings.gl}&q=${query}&ech=5&pb=%212i5%214m12%211m3%211d10427.76566217746%212d28.684810849999998%213d41.0094287%212m3%211f0%212f0%213f0%213m2%211i1066%212i665%214f13.1%217i20%2110b1%2112m25%211m5%2118b1%2130b1%2131m1%211b1%2134e1%212m4%215m1%216e2%2120e3%2139b1%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2146m1%211b0%2196b1%2199b1`;
+          settings.url = buildGoogleSuggestUrl(query);
           return settings;
         }
       };
@@ -110,7 +141,7 @@ function initEngine() {
       remoteConfig = {
         wildcard: "%QUERY",
         url: `https://photon.komoot.io/api/?q=%QUERY&limit=3`,
-        rateLimitWait: 1,
+        rateLimitWait: 200,
         transform: function (data) {
           if (data?.features?.length < 1) {
             console.log("missing location data");
@@ -197,14 +228,14 @@ function initEngine() {
         },
         prepare: function (query, settings) {
           settings.dataType = "json";
-          settings.url = settings.url.replace("%QUERY", query);
+          settings.url = settings.url.replace("%QUERY", encodeURIComponent(query));
           return settings;
         }
       };
     }
 
     acEngine = new Bloodhound({
-      datumTokenizer: Bloodhound.tokenizers.obj.whitespace("value"),
+      datumTokenizer: Bloodhound.tokenizers.obj.whitespace("location", "name"),
       queryTokenizer: Bloodhound.tokenizers.whitespace,
       remote: remoteConfig
     });
@@ -3373,7 +3404,7 @@ $("#place")
       limit: 4,
     },
     {
-      limit: 4,
+      limit: 10,
       display: "location",
       name: "locations",
       source: function (q, sync, async) {
@@ -3385,6 +3416,11 @@ $("#place")
     },
   )
   .bind("typeahead:select", function (ev, suggestion) {
+    applyPlaceSuggestion(suggestion);
+  });
+
+
+function applyPlaceSuggestion(suggestion) {
     $("#latitude").val(suggestion.latitude);
     $("#longitude").val(suggestion.longitude);
     $("#place").prop("placeholder", suggestion.name);
@@ -3401,7 +3437,7 @@ $("#place")
     if ($("#sync-gl").prop("checked") && suggestion.gl) {
       background.settings.gl = suggestion.gl;
       $("#gl").val(suggestion.gl);
-      
+
       // Update region display text if available
       var site = google_sites.find(s => s.gl === suggestion.gl);
       if (site) {
@@ -3410,17 +3446,15 @@ $("#place")
         $("#regions").val("");
       }
     } else {
-      // Default to US if sync is off
-      background.settings.gl = "US";
-      background.settings.regions = "United States - English";
-      $("#gl").val("US");
+      $("#gl").prop("placeholder", background.settings.gl);
+      $("#gl").val("");
       $("#regions").prop("placeholder", background.settings.regions);
       $("#regions").val("");
     }
 
     background.settings.timestamp = new Date().getTime();
     chrome.storage.sync.set({ settings: background.settings });
-  });
+}
 
 
 function deleteUULE() {
@@ -3502,6 +3536,27 @@ function loadHandler() {
     if (res["sync-gl"] !== undefined) {
       $("#sync-gl").prop("checked", res["sync-gl"]);
     }
+  });
+
+  function setProviderUI(useGoogle) {
+    $("#provider-switch button").removeClass("active");
+    $("#provider-switch button[data-provider='" + (useGoogle ? "google" : "komoot") + "']").addClass("active");
+  }
+
+  chrome.storage.sync.get("options", function (res) {
+    setProviderUI(!!(res.options && res.options.useGoogleEndpoint));
+  });
+
+  $("#provider-switch button").on("click", function () {
+    var useGoogle = $(this).data("provider") === "google";
+    setProviderUI(useGoogle);
+    chrome.storage.sync.get("options", function (res) {
+      var opts = (res && res.options) || {};
+      opts.useGoogleEndpoint = useGoogle;
+      chrome.storage.sync.set({ options: opts }, function () {
+        initEngine();
+      });
+    });
   });
 
   // Smart-paste & coordinate support
