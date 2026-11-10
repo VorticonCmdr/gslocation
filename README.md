@@ -6,6 +6,20 @@ Once you set a location Google will write a cookie UULE which also contains the 
 
 You can contact me on [LinkedIn](https://www.linkedin.com/in/valentinpletzer/)
 
+## Development
+
+The extension source lives in `src/`. Browser-specific builds are generated into `dist/` (not committed) by a dependency-free Node script:
+
+```sh
+npm run build            # dist/chrome and dist/firefox
+npm run package          # also creates dist/gslocation-<browser>-v<version>.zip
+```
+
+- **Chrome:** `chrome://extensions` → Developer mode → "Load unpacked" → select `dist/chrome`.
+- **Firefox (140+):** `npm run start:firefox`, or `about:debugging` → "This Firefox" → "Load Temporary Add-on" → `dist/firefox/manifest.json`. Firefox asks you to grant access to Google on the options page after install.
+
+`src/manifest.json` holds the shared manifest; `src/manifest.chrome.json` and `src/manifest.firefox.json` contain the per-browser overrides. Pushing a `v*` tag builds both zips and attaches them to a GitHub release.
+
 ## v3.9 - 2026-04-05
 Thanks to [bhagyesh11698](https://github.com/bhagyesh11698) for a major contribution: UI redesign with dark mode support, smart coordinate paste (comma-separated lat/lng), favorites panel in the popup, GL auto-sync when selecting a location, fix of the coordinate validation bug in `isLatLng()`, and a `NOTES.md` with the release zip command.
 

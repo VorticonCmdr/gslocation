@@ -13,9 +13,6 @@
   "declarative_net_request": {
     "rule_resources": []
   },
-  "background": {
-    "service_worker": "js/background.js"
-  },
   "action": {
     "default_icon": "img/disabled.png",
     "default_popup": "popup.html"
@@ -25,7 +22,10 @@
     "48": "img/icon48.png",
     "128": "img/icon128.png"
   },
-  "options_page": "options.html",
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "description": "change location for google search",
   "manifest_version": 3,
   "name": "gs location changer",

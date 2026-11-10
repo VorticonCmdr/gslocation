@@ -13,22 +13,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Version aus Tag auslesen
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: ZIP erstellen
-        run: |
-          zip -r gslocation.${{ steps.version.outputs.VERSION }}.zip . \
-            -x "*/.DS_Store" \
-            -x "*/.git/*" \
-            -x "*/.gitignore" \
-            -x "*/.handlebars" \
-            -x "*.md" \
-            -x ".github/*"
+      - name: Chrome- und Firefox-ZIPs bauen
+        run: node scripts/build.mjs --zip
 
       - name: GitHub Release erstellen
         uses: softprops/action-gh-release@v2
         with:
-          files: gslocation.${{ steps.version.outputs.VERSION }}.zip
+          files: dist/gslocation-*.zip
           generate_release_notes: true  # Erstellt automatisch Changelog aus Commits

@@ -1,0 +1,18 @@
+{
+  "name": "gslocation",
+  "private": true,
+  "description": "Browser extension that changes the location for Google Search (Chrome and Firefox builds)",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:chrome": "node scripts/build.mjs chrome",
+    "build:firefox": "node scripts/build.mjs firefox",
+    "package": "node scripts/build.mjs --zip",
+    "templates": "npx --yes handlebars templates/knownplaces.handlebars -f src/js/knownplaces.precompiled.js",
+    "lint:firefox": "npm run build:firefox && npx --yes web-ext lint -s dist/firefox",
+    "start:firefox": "npm run build:firefox && npx --yes web-ext run -s dist/firefox"
+  }
+}
