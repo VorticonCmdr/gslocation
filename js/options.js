@@ -47,17 +47,26 @@ function getKnownPlaces() {
       document.getElementById('knownplaces').innerHTML = knownPlacesTemplate(result);
       $('.remove').on('click', function(event) {
         var placeid = $(event.target).data('placeid');
-        var index = result.knownPlaces.findIndex(place => place.placeId === placeid);
-        var removedPlace = result.knownPlaces.splice(index, 1);
-        if (background.settings.placeId == removedPlace[0].placeId) {
-          background.settings.enabled = false;
-          chrome.action.setIcon({path:"disabled.png"});
-          chrome.storage.sync.set({settings: background.settings});
+        var index = result.knownPlaces.findIndex(place => String(place.placeId) === String(placeid));
+        if (index === -1) {
+          return;
         }
+        var removedPlace = result.knownPlaces.splice(index, 1);
         background.knownPlaces = result.knownPlaces;
-        background.settings.timestamp = new Date().getTime();
-        chrome.storage.sync.set({knownPlaces: background.knownPlaces}, function () {
-          getKnownPlaces();
+        // Compare against the stored active settings, not the local defaults.
+        // The background service worker updates the icon and header rules via
+        // storage.onChanged when settings.enabled flips to false.
+        chrome.storage.sync.get("settings", function(stored) {
+          var update = {knownPlaces: background.knownPlaces};
+          if (stored.settings && String(stored.settings.placeId) === String(removedPlace[0].placeId)) {
+            Object.assign(background.settings, stored.settings);
+            background.settings.enabled = false;
+            background.settings.timestamp = new Date().getTime();
+            update.settings = background.settings;
+          }
+          chrome.storage.sync.set(update, function () {
+            getKnownPlaces();
+          });
         });
       });
     }
