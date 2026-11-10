@@ -16,9 +16,20 @@ const settings = {
 };
 const knownPlaces = [settings];
 
-function genUULE() {
-  var lat = Math.floor(settings.latitude*1e7) || 525109360;
-  var lng = Math.floor(settings.longitude*1e7) || 134104990;
+// Returns {lat, lng} in degrees, or null if the stored values aren't valid
+// coordinates. 0 is a valid value (equator / prime meridian).
+function validCoords() {
+  var lat = parseFloat(settings.latitude);
+  var lng = parseFloat(settings.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    return null;
+  }
+  return { lat: lat, lng: lng };
+}
+
+function genUULE(coords) {
+  var lat = Math.round(coords.lat*1e7);
+  var lng = Math.round(coords.lng*1e7);
   var decodedXgeo = 'role: CURRENT_LOCATION\nproducer: DEVICE_LOCATION\nradius: 65000\nlatlng <\n  latitude_e7: '+lat+'\n  longitude_e7: '+lng+'\n>';
   var encodedXgeo = 'a '+btoa(decodedXgeo);
   return encodedXgeo
@@ -29,6 +40,12 @@ function genAcceptLanguage() {
 }
 
 function checkEnabled() {
+  var coords = validCoords();
+  if (settings.enabled && !coords) {
+    // Don't send a made-up location; keep whatever rule is active.
+    console.warn('Not updating location rule: invalid coordinates', settings.latitude, settings.longitude);
+    return;
+  }
   if (settings.enabled) {
     chrome.action.setIcon({path:"/img/enabled.png"});
     chrome.declarativeNetRequest.updateSessionRules(
@@ -46,7 +63,7 @@ function checkEnabled() {
                 {
                   "header": "x-geo",
                   "operation": "set",
-                  "value": genUULE()
+                  "value": genUULE(coords)
                 },
                 {
                   "header": "accept-language",
@@ -98,10 +115,17 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.storage.onChanged.addListener((changes, area) => {
+// Session rules and the action icon reset when the browser restarts, and an
+// MV3 service worker only starts for events it listens to. This (empty)
+// listener makes the browser start the worker at startup, which runs the
+// hydration at the bottom of this file and re-applies the rule.
+chrome.runtime.onStartup.addListener(() => {});
+
+chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area !== 'sync') {
     return;
   }
+  await ready;
   if (changes.settings) {
     Object.assign(settings, changes.settings.newValue);
     // Clear Google's persisted location on any enabled -> disabled transition,
@@ -183,7 +207,10 @@ function deleteUULE() {
   });
 }
 
-function genericOnClick(info, tab) {
+async function genericOnClick(info, tab) {
+  // After a worker restart, wait for stored settings; otherwise this would
+  // save the built-in defaults over the user's settings.
+  await ready;
   if (info.menuItemId == 'disable') {
     settings.enabled = false;
     deleteUULE();
@@ -201,16 +228,20 @@ function genericOnClick(info, tab) {
 // Hydrate in-memory state from storage on every service worker start (install,
 // browser startup, or wake from idle) rather than only on chrome.runtime.onStartup,
 // which does not fire for the far more frequent MV3 service-worker respawns.
-chrome.storage.sync.get(null, (data) => {
-  if (data.settings) {
-    Object.assign(settings, data.settings);
-  }
-  if (data.options) {
-    Object.assign(options, data.options);
-  }
-  if (data.knownPlaces) {
-    knownPlaces.splice(0, knownPlaces.length, ...data.knownPlaces);
-  }
-  checkEnabled();
-  setupContextMenu(knownPlaces);
+// Listeners above await `ready` so they never act on the built-in defaults.
+const ready = new Promise((resolve) => {
+  chrome.storage.sync.get(null, (data) => {
+    if (data.settings) {
+      Object.assign(settings, data.settings);
+    }
+    if (data.options) {
+      Object.assign(options, data.options);
+    }
+    if (data.knownPlaces) {
+      knownPlaces.splice(0, knownPlaces.length, ...data.knownPlaces);
+    }
+    checkEnabled();
+    setupContextMenu(knownPlaces);
+    resolve();
+  });
 });

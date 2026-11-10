@@ -3559,52 +3559,60 @@ function loadHandler() {
     });
   });
 
-  // Smart-paste & coordinate support
-  $("#longitude").on("input", function () {
+  // Smart-paste & coordinate support.
+  // Typing saves after a short pause, and only valid coordinates are saved:
+  // every save is a storage.sync write (rate-limited) that also rebuilds the
+  // header rule and context menu, and half-typed values like "48." must not
+  // become the live location.
+  var coordSaveTimer = null;
+
+  function parseCoord(raw, fallback, max) {
+    var text = String(raw).trim();
+    if (text === "") {
+      text = String(fallback);
+    }
+    // Strict number check: parseFloat("48abc") would accept junk.
+    if (!/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(text)) {
+      return null;
+    }
+    var n = Number(text);
+    return Math.abs(n) <= max ? n : null;
+  }
+
+  function persistCoords() {
+    clearTimeout(coordSaveTimer);
+    coordSaveTimer = null;
+    var lat = parseCoord($("#latitude").val(), background.settings.latitude, 90);
+    var lng = parseCoord($("#longitude").val(), background.settings.longitude, 180);
+    $("#latitude").toggleClass("is-invalid", lat === null);
+    $("#longitude").toggleClass("is-invalid", lng === null);
+    if (lat === null || lng === null) {
+      return;
+    }
+    if (lat === parseFloat(background.settings.latitude) && lng === parseFloat(background.settings.longitude)) {
+      return;
+    }
+    background.settings.latitude = lat;
+    background.settings.longitude = lng;
+    updateCustomLocation();
+    background.settings.timestamp = new Date().getTime();
+    chrome.storage.sync.set({ settings: background.settings });
+  }
+
+  $("#latitude, #longitude").on("input", function () {
     var val = $(this).val();
     if (val.includes(",")) {
+      // "lat, lng" pasted into either field: split it across both.
       var parts = val.split(",");
-      var lat = parts[0].trim();
-      var lng = parts[1].trim();
-      
-      $("#latitude").val(lat);
-      $(this).val(lng);
-      
-      background.settings.latitude = lat;
-      background.settings.longitude = lng;
-      updateCustomLocation();
-      background.settings.timestamp = new Date().getTime();
-      chrome.storage.sync.set({ settings: background.settings });
-    } else {
-      background.settings.longitude = val;
-      updateCustomLocation();
-      background.settings.timestamp = new Date().getTime();
-      chrome.storage.sync.set({ settings: background.settings });
+      $("#latitude").val(parts[0].trim());
+      $("#longitude").val(parts.slice(1).join(",").trim());
     }
+    clearTimeout(coordSaveTimer);
+    coordSaveTimer = setTimeout(persistCoords, 500);
   });
 
-  $("#latitude").on("input", function () {
-    var val = $(this).val();
-    if (val.includes(",")) {
-      var parts = val.split(",");
-      var lat = parts[0].trim();
-      var lng = parts[1].trim();
-      
-      $(this).val(lat);
-      $("#longitude").val(lng);
-      
-      background.settings.latitude = lat;
-      background.settings.longitude = lng;
-      updateCustomLocation();
-      background.settings.timestamp = new Date().getTime();
-      chrome.storage.sync.set({ settings: background.settings });
-    } else {
-      background.settings.latitude = val;
-      updateCustomLocation();
-      background.settings.timestamp = new Date().getTime();
-      chrome.storage.sync.set({ settings: background.settings });
-    }
-  });
+  // Save right away when leaving the field or pressing Enter.
+  $("#latitude, #longitude").on("change", persistCoords);
 
   // Manual entry of languages
   $("#hl, #gl").on("change", function () {
@@ -3636,13 +3644,18 @@ function loadHandler() {
     // Unshift to put it at the top of the context menu
     background.knownPlaces.unshift(newFavorite);
 
-    chrome.storage.sync.set({
-      settings: background.settings,
-      knownPlaces: background.knownPlaces
-    }, function () {
+    saveKnownPlaces(background.knownPlaces, { settings: background.settings }, function (res) {
+      if (res.error) {
+        alert("Could not save favorite: " + res.error);
+        return;
+      }
+      background.knownPlaces = res.places;
       $("#place").prop("placeholder", locName);
       $("#place").val("");
-      alert("⭐ Saved '" + locName + "' to Favorites!");
+      var note = res.dropped
+        ? "\n\nThe " + res.dropped + " oldest favorite(s) were removed to stay within the sync storage limit."
+        : "";
+      alert("⭐ Saved '" + locName + "' to Favorites!" + note);
       renderFavorites();
     });
   });
@@ -3702,7 +3715,10 @@ function loadHandler() {
       deleteBtn.on("click", function (e) {
         e.stopPropagation();
         background.knownPlaces.splice(index, 1);
-        chrome.storage.sync.set({ knownPlaces: background.knownPlaces }, function () {
+        saveKnownPlaces(background.knownPlaces, {}, function (res) {
+          if (!res.error) {
+            background.knownPlaces = res.places;
+          }
           renderFavorites();
         });
       });

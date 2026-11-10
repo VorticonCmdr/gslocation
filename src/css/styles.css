@@ -124,6 +124,11 @@ body {
   box-shadow: none !important;
 }
 
+/* Invalid value (e.g. out-of-range coordinate); the rules above remove borders */
+.input-group .form-control.is-invalid {
+  box-shadow: inset 0 0 0 2px var(--danger-color) !important;
+}
+
 .form-control::placeholder {
   color: var(--text-muted) !important;
   opacity: 0.9 !important;

@@ -57,14 +57,14 @@ function getKnownPlaces() {
         // The background service worker updates the icon and header rules via
         // storage.onChanged when settings.enabled flips to false.
         chrome.storage.sync.get("settings", function(stored) {
-          var update = {knownPlaces: background.knownPlaces};
+          var extra = {};
           if (stored.settings && String(stored.settings.placeId) === String(removedPlace[0].placeId)) {
             Object.assign(background.settings, stored.settings);
             background.settings.enabled = false;
             background.settings.timestamp = new Date().getTime();
-            update.settings = background.settings;
+            extra.settings = background.settings;
           }
-          chrome.storage.sync.set(update, function () {
+          saveKnownPlaces(background.knownPlaces, extra, function () {
             getKnownPlaces();
           });
         });
@@ -103,7 +103,16 @@ function getOptions() {
 
     $('#button-maxplaces').on('click', function() {
       result['options']['maxplaces'] = parseInt($('#input-maxplaces').val()) || 100;
-      chrome.storage.sync.set(result);
+      chrome.storage.sync.set(result, function() {
+        // Apply the new limit to the stored list right away.
+        chrome.storage.sync.get('knownPlaces', function(stored) {
+          if (stored.knownPlaces) {
+            saveKnownPlaces(stored.knownPlaces, {}, function() {
+              getKnownPlaces();
+            });
+          }
+        });
+      });
     });
 
     $('#button-consent').on('click', function() {
