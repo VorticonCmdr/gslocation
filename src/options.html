@@ -9,15 +9,15 @@
     <script type="text/javascript" src="js/handlebars.runtime.min-v4.7.7.js"></script>
     <script type="text/javascript" src="js/knownplaces.precompiled.js"></script>
     <script type="text/javascript" src="js/options.js"></script>
-    <script>
-      // Sync theme on load
-      chrome.storage.sync.get('theme', (data) => {
-        if (data.theme === 'dark') document.body.classList.add('dark-mode');
-      });
-    </script>
+    <script type="text/javascript" src="js/theme.js"></script>
   </head>
   <body>
     <div class="container py-5">
+      <div id="permission-alert" class="alert alert-warning d-none" role="alert">
+        <strong>Access to Google is required.</strong>
+        This browser asks you to approve site access separately. Without it the extension cannot set the location header, clear the UULE cookie, or suggest places.
+        <button id="button-grant-permissions" type="button" class="btn btn-warning btn-sm ml-2">Grant access</button>
+      </div>
       <div class="row section-header border-0 shadow-none bg-transparent mb-4">
         <h1 style="font-weight: 800; letter-spacing: -0.02em;">Extension Options</h1>
         <p class="text-muted">Manage your saved locations and global search preferences.</p>

@@ -114,3 +114,19 @@ function getOptions() {
   });
 }
 getOptions();
+
+// Firefox lets users revoke host permissions in about:addons. If they're
+// missing, offer a button to request them again (needs a user gesture).
+// Normally they're granted at install and the alert stays hidden.
+const requiredOrigins = { origins: chrome.runtime.getManifest().host_permissions || [] };
+function updatePermissionAlert() {
+  chrome.permissions.contains(requiredOrigins, (granted) => {
+    $('#permission-alert').toggleClass('d-none', !!granted);
+  });
+}
+$(function() {
+  $('#button-grant-permissions').on('click', function() {
+    chrome.permissions.request(requiredOrigins, () => updatePermissionAlert());
+  });
+  updatePermissionAlert();
+});

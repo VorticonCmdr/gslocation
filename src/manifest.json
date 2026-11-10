@@ -10,9 +10,6 @@
     "https://maps.google.com/",
     "https://photon.komoot.io/"
   ],
-  "declarative_net_request": {
-    "rule_resources": []
-  },
   "action": {
     "default_icon": "img/disabled.png",
     "default_popup": "popup.html"

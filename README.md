@@ -16,7 +16,7 @@ npm run package          # also creates dist/gslocation-<browser>-v<version>.zip
 ```
 
 - **Chrome:** `chrome://extensions` → Developer mode → "Load unpacked" → select `dist/chrome`.
-- **Firefox (140+):** `npm run start:firefox`, or `about:debugging` → "This Firefox" → "Load Temporary Add-on" → `dist/firefox/manifest.json`. Firefox asks you to grant access to Google on the options page after install.
+- **Firefox (140+):** `npm run start:firefox`, or `about:debugging` → "This Firefox" → "Load Temporary Add-on" → `dist/firefox/manifest.json`. Firefox grants the Google site access at install; if a user later revokes it in about:addons, the options page shows a "Grant access" button.
 
 `src/manifest.json` holds the shared manifest; `src/manifest.chrome.json` and `src/manifest.firefox.json` contain the per-browser overrides. Pushing a `v*` tag builds both zips and attaches them to a GitHub release.
 

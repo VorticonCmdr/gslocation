@@ -23,7 +23,7 @@ npm run lint:firefox       # web-ext lint via npx
 npm run start:firefox      # launch Firefox with the add-on via web-ext
 ```
 
-Chrome uses a service worker (`background.service_worker`); Firefox uses an event page (`background.scripts`) and needs `browser_specific_settings.gecko` (id `gslocation@valentin.app`, min version 140). In Firefox MV3, host permissions are opt-in: the background opens the options page on install if they're missing, and the options page shows a "grant access" button.
+Chrome uses a service worker (`background.service_worker`); Firefox uses an event page (`background.scripts`) and needs `browser_specific_settings.gecko` (id `gslocation@valentin.app`, min version 140). Firefox (127+) grants MV3 host permissions at install, but users can revoke them in about:addons; as a fallback the background opens the options page on install if they're missing, and the options page shows a "Grant access" button while they are.
 
 ## Loading the extension for development
 

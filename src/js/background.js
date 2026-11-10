@@ -87,6 +87,17 @@ function checkEnabled() {
   }
 }
 
+// Fallback: if host permissions are missing (e.g. revoked in Firefox),
+// open the options page, which offers a button to request them.
+chrome.runtime.onInstalled.addListener(() => {
+  const origins = chrome.runtime.getManifest().host_permissions || [];
+  chrome.permissions.contains({ origins }, (granted) => {
+    if (!granted) {
+      chrome.runtime.openOptionsPage();
+    }
+  });
+});
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'sync') {
     return;
