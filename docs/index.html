@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gs location changer – see Google Search from anywhere</title>
+<meta name="description" content="A browser extension that changes your location in Google Search. Pick any place and see the results people there see – for local SEO checks, research and testing.">
+<meta property="og:title" content="gs location changer">
+<meta property="og:description" content="See Google Search results as if you were somewhere else. Pick a place, flip the switch, search.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://vorticoncmdr.github.io/gslocation/icon128.png">
+<link rel="icon" href="icon48.png" type="image/png">
+<style>
+:root {
+  --bg: #f6f8fa;
+  --surface: #ffffff;
+  --surface-2: #eef2f6;
+  --text: #1c2327;
+  --muted: #4d5961;
+  --border: #d5dde3;
+  --accent: #0a66c2;
+  --accent-strong: #084f97;
+  --accent-soft: #e3f0fc;
+  --on-accent: #ffffff;
+  --ok: #1a7f45;
+  --code-bg: #10161c;
+  --code-text: #d7e3ee;
+  --code-key: #7cc4ff;
+  --code-dim: #8a9aa8;
+  --shadow: 0 1px 2px rgba(16, 24, 32, .06), 0 12px 32px rgba(16, 24, 32, .10);
+  --radius: 14px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1317;
+    --surface: #171e24;
+    --surface-2: #1f2830;
+    --text: #e6edf2;
+    --muted: #a3b1bc;
+    --border: #2c3842;
+    --accent: #6db8ff;
+    --accent-strong: #9acdff;
+    --accent-soft: #14304a;
+    --on-accent: #06223b;
+    --ok: #5fd08f;
+    --code-bg: #0a0f13;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px rgba(0, 0, 0, .45);
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+img, svg { max-width: 100%; }
+a { color: var(--accent); text-underline-offset: .18em; }
+a:hover { color: var(--accent-strong); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { line-height: 1.2; margin: 0; letter-spacing: -.015em; }
+h1 { font-size: clamp(2.1rem, 5.2vw, 3.4rem); font-weight: 800; letter-spacing: -.03em; }
+h2 { font-size: clamp(1.5rem, 3.2vw, 2.1rem); font-weight: 750; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+p { margin: 0; }
+code { font-family: var(--mono); font-size: .9em; background: var(--surface-2); padding: .1em .35em; border-radius: 5px; }
+.wrap { width: min(1120px, 100% - 2.5rem); margin-inline: auto; }
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 1rem; top: 1rem; background: var(--surface); padding: .5rem .9rem; z-index: 10; }
+
+/* Header */
+.site-header { padding: 1.1rem 0; }
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.brand { display: inline-flex; align-items: center; gap: .6rem; font-weight: 750; color: var(--text); text-decoration: none; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.site-nav { display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: .95rem; }
+.site-nav a { color: var(--muted); text-decoration: none; font-weight: 600; padding: .25rem 0; }
+.site-nav a:hover { color: var(--text); text-decoration: underline; }
+
+/* Hero */
+.hero { padding: clamp(1.5rem, 5vw, 4rem) 0 clamp(2.5rem, 6vw, 5rem); }
+.hero .wrap { display: grid; gap: clamp(2rem, 5vw, 4rem); align-items: center; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 940px) { .hero .wrap { grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr); } }
+.eyebrow { display: inline-block; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: .3rem .7rem; border-radius: 999px; margin-bottom: 1.1rem; }
+.lead { font-size: clamp(1.1rem, 2vw, 1.3rem); color: var(--muted); margin-top: 1.1rem; max-width: 34em; }
+.cta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.8rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: .7rem 1.25rem; border-radius: 12px; font-weight: 700; font-size: 1rem; text-decoration: none; border: 1.5px solid transparent; transition: transform .15s ease, background-color .15s ease; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: var(--accent-strong); color: var(--on-accent); }
+.btn-ghost { border-color: var(--border); color: var(--text); background: var(--surface); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.hero-note { margin-top: 1rem; font-size: .92rem; color: var(--muted); }
+
+/* Demo */
+.demo { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: clamp(1rem, 2.5vw, 1.5rem); min-width: 0; }
+.demo-title { font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .75rem; }
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.chip { font: inherit; font-size: .92rem; font-weight: 650; min-height: 40px; padding: .35rem .9rem; border-radius: 999px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.popup { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: .85rem; display: grid; gap: .55rem; }
+.field { display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); overflow: hidden; min-width: 0; }
+.field .label { flex: none; display: flex; align-items: center; padding: .45rem .6rem; font-size: .68rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); border-right: 1px solid var(--border); }
+.field .value { flex: 1; min-width: 0; padding: .45rem .65rem; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+.popup-foot { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding-top: .15rem; }
+.switch { display: inline-flex; align-items: center; gap: .6rem; font-size: .78rem; font-weight: 750; letter-spacing: .06em; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch .track { width: 46px; height: 26px; border-radius: 999px; background: #9aa6af; position: relative; transition: background-color .2s ease; flex: none; }
+.switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s ease; }
+.switch input:checked + .track { background: var(--ok); }
+.switch input:checked + .track::after { transform: translateX(20px); }
+.switch input:focus-visible + .track { outline: 3px solid var(--accent); outline-offset: 3px; }
+.state-on { color: var(--ok); }
+.request { margin-top: 1rem; background: var(--code-bg); color: var(--code-text); border-radius: var(--radius); padding: .9rem 1rem; font-family: var(--mono); font-size: .8rem; line-height: 1.65; overflow-wrap: anywhere; }
+.request .dim { color: var(--code-dim); }
+.request .key { color: var(--code-key); }
+.request .off { color: var(--code-dim); font-style: italic; }
+.demo-caption { margin-top: .75rem; font-size: .88rem; color: var(--muted); }
+
+/* Sections */
+section { padding: clamp(2.5rem, 6vw, 4.5rem) 0; }
+.band { background: var(--surface); border-block: 1px solid var(--border); }
+.section-head { max-width: 40em; margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+.section-head p { color: var(--muted); margin-top: .7rem; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); counter-reset: step; }
+.steps li { counter-increment: step; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; }
+.steps li::before { content: counter(step); display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 800; margin-bottom: .9rem; }
+.steps p, .card p { color: var(--muted); margin-top: .45rem; font-size: 1rem; }
+.cards { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; }
+.card .icon { width: 40px; height: 40px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin-bottom: .9rem; }
+.card .icon svg { width: 22px; height: 22px; }
+.facts { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.facts .card ul { margin: .6rem 0 0; padding-left: 1.15rem; color: var(--muted); font-size: 1rem; }
+.facts .card li + li { margin-top: .4rem; }
+.install { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.install .card { display: flex; flex-direction: column; gap: .6rem; }
+.install .card .btn { margin-top: auto; align-self: flex-start; }
+.tag { align-self: flex-start; font-size: .72rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+pre { margin: .3rem 0 0; background: var(--code-bg); color: var(--code-text); border-radius: 10px; padding: .8rem 1rem; font-family: var(--mono); font-size: .85rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+pre code { background: none; padding: 0; font-size: inherit; }
+.faq { max-width: 46em; display: grid; gap: .75rem; }
+details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0 1.1rem; }
+summary { cursor: pointer; font-weight: 700; padding: 1rem 0; list-style: none; display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font-size: 1.4rem; line-height: 1; color: var(--accent); flex: none; }
+details[open] summary::after { content: "–"; }
+details p { color: var(--muted); padding-bottom: 1.1rem; }
+footer { padding: 2.5rem 0 3rem; color: var(--muted); font-size: .92rem; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: .75rem 2rem; justify-content: space-between; }
+footer nav { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+@media (max-width: 480px) {
+  .site-nav { gap: .25rem .9rem; font-size: .9rem; }
+  .field .label { padding-inline: .45rem; font-size: .62rem; }
+  .field .value { padding-inline: .45rem; font-size: .84rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="gs location changer home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="var(--accent)" d="M16 2C9.9 2 5 6.9 5 13c0 7.6 9.2 16 10 16.700a1.500 1.500 0 0 0 2 0C17.800 29 27 20.600 27 13 27 6.900 22.100 2 16 2z"/><circle cx="16" cy="13" r="4.500" fill="var(--bg)"/></svg>
+      gs location changer
+    </a>
+    <nav class="site-nav" aria-label="Page sections">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/VorticonCmdr/gslocation">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" style="padding-top:clamp(1.500rem,5vw,4rem)">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Browser extension for Google Search</span>
+        <h1>See Google Search from anywhere.</h1>
+        <p class="lead">Pick any place on the map and Google shows you the results people there see. Made for local SEO checks, research and testing&nbsp;– without a VPN.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://chrome.google.com/webstore/detail/gs-location-changer/blpgcfdpnimjdojecbpagkllfnkajglp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.500-4.500M12 15l4.500-4.500M5 20h14"/></svg>
+            Add to Chrome
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/VorticonCmdr/gslocation">View source on GitHub</a>
+        </div>
+        <p class="hero-note">Free. No account. A Firefox build is available from source and still experimental.</p>
+      </div>
+
+      <div class="demo" aria-labelledby="demo-title">
+        <p class="demo-title" id="demo-title">Try it: pick a place</p>
+        <div class="chips" role="group" aria-label="Example places">
+          <button class="chip" type="button" data-i="0" aria-pressed="true">Munich</button>
+          <button class="chip" type="button" data-i="1" aria-pressed="false">Tokyo</button>
+          <button class="chip" type="button" data-i="2" aria-pressed="false">New York</button>
+          <button class="chip" type="button" data-i="3" aria-pressed="false">São Paulo</button>
+        </div>
+
+        <div class="popup">
+          <div class="field"><span class="label">Location</span><span class="value" id="d-place">Munich, Bavaria, Germany</span></div>
+          <div class="grid-2">
+            <div class="field"><span class="label">Lang</span><span class="value" id="d-hl">de</span></div>
+            <div class="field"><span class="label">Country</span><span class="value" id="d-gl">DE</span></div>
+            <div class="field"><span class="label">Lat</span><span class="value" id="d-lat">48.137154</span></div>
+            <div class="field"><span class="label">Lng</span><span class="value" id="d-lng">11.576124</span></div>
+          </div>
+          <div class="popup-foot">
+            <span class="value" id="d-region" style="font-size:.900rem;color:var(--muted)">Germany – Deutsch</span>
+            <label class="switch">
+              <span id="d-state" class="state-on">ACTIVE</span>
+              <input type="checkbox" id="d-enabled" checked aria-label="Location spoofing enabled">
+              <span class="track" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="request" aria-live="polite" id="d-request"></div>
+        <p class="demo-caption">This is the request header the extension adds to your Google searches. The demo runs in this page only.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="band">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>How it works</h2>
+        <p>Google reads a location hint from a request header called <code>x-geo</code>. The extension sets that header for you, so there is nothing to route through another country.</p>
+      </div>
+      <ol class="steps">
+        <li><h3>Pick a place</h3><p>Search for a city, address or landmark in the popup, or paste coordinates like <code>48.137, 11.576</code>.</p></li>
+        <li><h3>Flip the switch</h3><p>The icon turns active. Your searches on google.com now carry the location and the language you chose.</p></li>
+        <li><h3>Search as usual</h3><p>Results, maps and local packs match the place you picked. Switch off to return to your real location.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Built for checking local results quickly</h2>
+        <p>Everything is one click away from the toolbar or the right-click menu.</p>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.500-3.500"/></svg></div>
+          <h3>Place search</h3>
+          <p>Autocomplete powered by OpenStreetMap data (Photon), with an optional Google Maps source.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <h3>Exact coordinates</h3>
+          <p>Type or paste latitude and longitude. Values are checked, so a typo never becomes your location.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h9M8.500 3v2M6 5c.500 4 3 7 6.500 8.500M11 5c-.500 4-3 7.500-7 9"/><path d="m13 21 4-9 4 9M14.500 18h5"/></svg></div>
+          <h3>Language and country</h3>
+          <p>Choose from about 390 Google region and language pairs, or let the country follow the place you pick.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.700 5.600 6.100.900-4.400 4.300 1 6.100L12 17l-5.400 2.900 1-6.100L3.200 9.500l6.100-.900z"/></svg></div>
+          <h3>Favorites</h3>
+          <p>Save places you check often. They sync with your browser profile and appear in the right-click menu.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M5 6h14M5 18h8"/></svg></div>
+          <h3>Right-click switching</h3>
+          <p>Change location or turn spoofing off from the context menu without opening the popup.</p>
+        </div>
+        <div class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></div>
+          <h3>Clean switch-off</h3>
+          <p>Google stores the location in a cookie named UULE. Turning the extension off deletes it, so nothing lingers.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy" class="band">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Privacy and permissions, in plain words</h2>
+        <p>No analytics, no tracking and no server of our own. Here is exactly what the extension touches.</p>
+      </div>
+      <div class="facts">
+        <div class="card">
+          <h3>What leaves your browser</h3>
+          <ul>
+            <li>Place names you type are sent to <strong>photon.komoot.io</strong> to find suggestions, or to Google if you switch the search source.</li>
+            <li>Your Google searches go to Google as always, with the location and language headers added.</li>
+            <li>Settings and favorites are stored in your browser's sync storage, so they follow your browser account.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>What it is allowed to do</h3>
+          <ul>
+            <li>Change request headers on <strong>google.com</strong> only.</li>
+            <li>Read and delete Google's UULE location cookie.</li>
+            <li>Add entries to the right-click menu and store its own settings.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>What it does not do</h3>
+          <ul>
+            <li>It does not change your IP address or act as a VPN.</li>
+            <li>It does not change the location reported to other websites.</li>
+            <li>It does not read the pages you visit.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Install</h2>
+        <p>The Chrome Web Store is the easiest way. Developers can build both browser versions from source.</p>
+      </div>
+      <div class="install">
+        <div class="card">
+          <span class="tag">Recommended</span>
+          <h3>Chrome and Chromium browsers</h3>
+          <p>Made for Chrome. Other Chromium browsers that install Chrome Web Store extensions should work too.</p>
+          <a class="btn btn-primary" href="https://chrome.google.com/webstore/detail/gs-location-changer/blpgcfdpnimjdojecbpagkllfnkajglp">Open in Chrome Web Store</a>
+        </div>
+        <div class="card">
+          <span class="tag">Experimental</span>
+          <h3>Firefox 140+</h3>
+          <p>A Firefox build is generated from the same source. It is not yet tested or listed on addons.mozilla.org, so load it as a temporary add-on from a clone of the repository.</p>
+          <pre><code>npm run start:firefox</code></pre>
+        </div>
+        <div class="card">
+          <span class="tag">From source</span>
+          <h3>Build it yourself</h3>
+          <p>No dependencies to install. Then load <code>dist/chrome</code> as an unpacked extension.</p>
+          <pre><code>git clone https://github.com/VorticonCmdr/gslocation.git
+cd gslocation
+npm run build</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="band">
+    <div class="wrap">
+      <div class="section-head"><h2>Questions</h2></div>
+      <div class="faq">
+        <details>
+          <summary>Does it work on google.de, google.co.uk and other country sites?</summary>
+          <p>Google's country sites redirect to google.com, and that is where the extension works. Use the language and country fields to get results for a specific market.</p>
+        </details>
+        <details>
+          <summary>Why do I still see my old location after switching off?</summary>
+          <p>The extension deletes Google's UULE cookie when you switch off. If a tab was already open, reload it. Google may also fall back to your IP address or account settings for your real location.</p>
+        </details>
+        <details>
+          <summary>Is this the same as a VPN?</summary>
+          <p>No. Your IP address and connection do not change. Only Google Search receives a different location hint, which is faster and enough for comparing search results.</p>
+        </details>
+        <details>
+          <summary>How many favorites can I save?</summary>
+          <p>Around 30, depending on the length of the names. Browser sync storage limits the size of the list; when it is full, the oldest favorite is removed.</p>
+        </details>
+        <details>
+          <summary>Who makes this?</summary>
+          <p>Valentin Pletzer, with contributions from the community. Reach out on <a href="https://www.linkedin.com/in/valentinpletzer/">LinkedIn</a> or open an issue on <a href="https://github.com/VorticonCmdr/gslocation/issues">GitHub</a>.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>gs location changer is an independent project and is not affiliated with or endorsed by Google.</p>
+    <nav aria-label="Footer">
+      <a href="https://github.com/VorticonCmdr/gslocation">Source</a>
+      <a href="https://github.com/VorticonCmdr/gslocation#readme">Changelog</a>
+      <a href="https://github.com/VorticonCmdr/gslocation/issues">Report an issue</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var places = [
+    { place: "Munich, Bavaria, Germany", lat: 48.137154, lng: 11.576124, hl: "de", gl: "DE", region: "Germany – Deutsch" },
+    { place: "Tokyo, Japan", lat: 35.676423, lng: 139.650027, hl: "ja", gl: "JP", region: "Japan – 日本語" },
+    { place: "New York, NY, United States", lat: 40.712776, lng: -74.005974, hl: "en", gl: "US", region: "United States – English" },
+    { place: "São Paulo, Brazil", lat: -23.550520, lng: -46.633308, hl: "pt-BR", gl: "BR", region: "Brazil – português" }
+  ];
+  var current = 0;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // Same encoding the extension uses for the x-geo header.
+  function xgeo(p) {
+    var text = "role: CURRENT_LOCATION\nproducer: DEVICE_LOCATION\nradius: 65000\nlatlng <\n  latitude_e7: " +
+      Math.round(p.lat * 1e7) + "\n  longitude_e7: " + Math.round(p.lng * 1e7) + "\n>";
+    return "a " + btoa(text);
+  }
+  function line(key, value) {
+    var row = document.createElement("div");
+    var k = document.createElement("span"); k.className = "key"; k.textContent = key + ": ";
+    row.appendChild(k); row.appendChild(document.createTextNode(value));
+    return row;
+  }
+  function render() {
+    var p = places[current];
+    var on = $("d-enabled").checked;
+    $("d-place").textContent = p.place;
+    $("d-hl").textContent = p.hl;
+    $("d-gl").textContent = p.gl;
+    $("d-lat").textContent = p.lat.toFixed(6);
+    $("d-lng").textContent = p.lng.toFixed(6);
+    $("d-region").textContent = p.region;
+    $("d-state").textContent = on ? "ACTIVE" : "OFF";
+    $("d-state").className = on ? "state-on" : "";
+
+    var box = $("d-request");
+    box.textContent = "";
+    var first = document.createElement("div"); first.className = "dim";
+    first.textContent = "GET https://www.google.com/search?q=pizza";
+    box.appendChild(first);
+    if (on) {
+      box.appendChild(line("x-geo", xgeo(p)));
+      box.appendChild(line("accept-language", p.hl.indexOf("-") > -1 ? p.hl : p.hl + "-" + p.gl));
+    } else {
+      var off = document.createElement("div"); off.className = "off";
+      off.textContent = "No location headers added. Google uses your real location.";
+      box.appendChild(off);
+    }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (chip) {
+    chip.addEventListener("click", function () {
+      current = Number(chip.getAttribute("data-i"));
+      Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      render();
+    });
+  });
+  $("d-enabled").addEventListener("change", render);
+  render();
+})();
+</script>
+</body>
+</html>
