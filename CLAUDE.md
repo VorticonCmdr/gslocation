@@ -14,6 +14,7 @@ There is no bundler, no runtime npm dependencies, and no test suite. All JS is p
 - `scripts/build.mjs` — copies `src/` to `dist/<target>/` and writes the merged manifest. `--zip` also writes `dist/gslocation-<target>-v<version>.zip`.
 - `dist/` — generated, gitignored. Never edit files there.
 - `templates/` — Handlebars template sources (not shipped).
+- `src/fonts/` — bundled Inter woff2 (latin + latin-ext, OFL). Don't reintroduce remote font/CSS loads.
 
 ```sh
 npm run build              # both targets
@@ -47,7 +48,7 @@ The `typeahead.precompiled.js` and `locations.precompiled.js` files have no sour
 
 **Storage schema** (`chrome.storage.sync`):
 - `settings` — active location: `{ latitude, longitude, location, name, placeId, hl, gl, regions, enabled, timestamp }`
-- `knownPlaces` — array of saved places (same shape as `settings`)
+- `knownPlaces` — array of saved places (same fields as `settings`, minus `enabled`). It's a single sync item capped at 8 KB (~30 places): always write it via `saveKnownPlaces()` in `src/js/places.js`, which compacts, enforces `options.maxplaces`, drops the oldest by `timestamp` to fit, and reports errors.
 - `options` — `{ consent, contextnumber, maxplaces }`
 
 **Key mechanisms:**
