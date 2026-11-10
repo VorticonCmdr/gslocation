@@ -28,7 +28,7 @@ It does not change your IP address and does not affect other websites.
 - No analytics or tracking, and no server of its own.
 - Place names you type in the popup are sent to `photon.komoot.io` (or to Google, if you select that source) to fetch suggestions.
 - Settings and favorites are kept in the browser's sync storage. Favorites are limited by its 8 KB per-item quota (around 30 places); the oldest are dropped when it is full.
-- Permissions: modify request headers on `google.com`, read/delete the `UULE` cookie, context menu, storage.
+- Permissions: modify request headers on `google.com`; cookie access on `google.com` (used only to delete the `UULE` cookie); context menu; storage.
 
 This project is not affiliated with or endorsed by Google.
 

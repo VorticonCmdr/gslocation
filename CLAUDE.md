@@ -14,6 +14,7 @@ There is no bundler, no runtime npm dependencies, and no test suite. All JS is p
 - `scripts/build.mjs` — copies `src/` to `dist/<target>/` and writes the merged manifest. `--zip` also writes `dist/gslocation-<target>-v<version>.zip`.
 - `dist/` — generated, gitignored. Never edit files there.
 - `templates/` — Handlebars template sources (not shipped).
+- `docs/` — GitHub Pages site (`docs/index.html`, one static file, relative asset paths only, no external requests).
 - No remote fonts/CSS: pages use the system font stack (no network request on popup open).
 
 ```sh
