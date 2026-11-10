@@ -11,7 +11,7 @@
     "build:chrome": "node scripts/build.mjs chrome",
     "build:firefox": "node scripts/build.mjs firefox",
     "package": "node scripts/build.mjs --zip",
-    "templates": "npx --yes handlebars templates/knownplaces.handlebars -f src/js/knownplaces.precompiled.js",
+    "templates": "npx --yes handlebars@4.7.7 templates/knownplaces.handlebars -f src/js/knownplaces.precompiled.js && npx --yes handlebars@4.7.7 templates/typeahead.handlebars -f src/js/typeahead.precompiled.js && npx --yes handlebars@4.7.7 templates/locations.handlebars -f src/js/locations.precompiled.js",
     "lint:firefox": "npm run build:firefox && npx --yes web-ext lint -s dist/firefox",
     "start:firefox": "npm run build:firefox && npx --yes web-ext run -s dist/firefox"
   }

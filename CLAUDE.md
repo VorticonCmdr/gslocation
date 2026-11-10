@@ -40,10 +40,10 @@ After editing anything in `src/`, rebuild and reload the extension.
 The `.handlebars` sources must be precompiled into `src/js/*.precompiled.js` after any template change:
 
 ```sh
-npm run templates   # templates/knownplaces.handlebars -> src/js/knownplaces.precompiled.js
+npm run templates   # templates/{knownplaces,typeahead,locations}.handlebars -> src/js/*.precompiled.js (handlebars@4.7.7)
 ```
 
-The `typeahead.precompiled.js` and `locations.precompiled.js` files have no sources in the repo — treat the `.precompiled.js` files as the source of truth for those.
+The templates are the source of truth; never hand-edit `*.precompiled.js`. Store reviewers (AMO) rebuild them, so the output must stay byte-identical to `npm run templates`.
 
 ## Architecture
 

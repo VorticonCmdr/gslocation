@@ -52,7 +52,33 @@ npm run package          # also creates dist/gslocation-<browser>-v<version>.zip
 
 The website is a single static page in `docs/index.html`, served by GitHub Pages.
 
+### Build for review (reproducing the store packages)
+
+Requirements: Node.js 18 or newer. No `npm install` is needed; the build uses only Node built-ins.
+
+```sh
+node scripts/build.mjs firefox   # -> dist/firefox/ (Firefox package contents)
+node scripts/build.mjs chrome    # -> dist/chrome/
+node scripts/build.mjs --zip     # also writes dist/gslocation-<browser>-v<version>.zip
+```
+
+The build copies `src/` unchanged and writes `manifest.json` by merging `src/manifest.json` with `src/manifest.<browser>.json`. Nothing is minified, bundled or transpiled.
+
+Generated files in `src/js/`: `knownplaces.precompiled.js`, `typeahead.precompiled.js` and `locations.precompiled.js` are Handlebars templates precompiled from `templates/*.handlebars` with Handlebars 4.7.7. Regenerate them with `npm run templates` (downloads `handlebars@4.7.7` via npx); the output is byte-identical to the committed files.
+
+Third-party libraries, included unmodified from their official releases:
+
+| File | Source |
+|---|---|
+| `src/js/jquery-3.7.1.min.js` | https://code.jquery.com/jquery-3.7.1.min.js |
+| `src/js/handlebars.runtime.min-v4.7.7.js` | https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.runtime.min.js |
+| `src/js/typeahead.bundle.min.0.11.1.js` | https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js |
+| `src/css/bootstrap.min.v4.6.1.css` | https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css |
+
 ## Changelog
+
+### v4.0.1 - 2026-11-10
+- Source code for review: added the missing Handlebars sources (`templates/typeahead.handlebars`, `templates/locations.handlebars`) so every generated file can be rebuilt with `npm run templates`, and documented the build and third-party libraries. No functional changes.
 
 ### v4.0 - 2026-11-10
 - New project layout: source in `src/`, per-browser builds in `dist/` via `npm run build`. A Firefox build is included (not yet tested in Firefox).
