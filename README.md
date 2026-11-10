@@ -2,7 +2,7 @@
 
 **See Google Search results as if you were somewhere else.** Pick a place, flip the switch, and Google shows the results people there see. Made for local SEO checks, research and testing, without a VPN.
 
-- Website: <https://vorticoncmdr.github.io/gslocation/>
+- Website: <https://www.decompile.tools/gslocation/>
 - Install: [Chrome Web Store](https://chrome.google.com/webstore/detail/gs-location-changer/blpgcfdpnimjdojecbpagkllfnkajglp)
 - Firefox: an experimental build can be made from source (not yet tested or listed on addons.mozilla.org)
 
