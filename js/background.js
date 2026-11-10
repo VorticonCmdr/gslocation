@@ -100,7 +100,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
     Object.assign(options, changes.options.newValue);
   }
   if (changes.knownPlaces) {
-    Object.assign(knownPlaces, changes.knownPlaces.newValue);
+    // Replace contents (not Object.assign) so removed places don't linger at the tail.
+    knownPlaces.splice(0, knownPlaces.length, ...(changes.knownPlaces.newValue || []));
     setupContextMenu(knownPlaces);
   }
 });
@@ -192,7 +193,7 @@ chrome.storage.sync.get(null, (data) => {
     Object.assign(options, data.options);
   }
   if (data.knownPlaces) {
-    Object.assign(knownPlaces, data.knownPlaces);
+    knownPlaces.splice(0, knownPlaces.length, ...data.knownPlaces);
   }
   checkEnabled();
   setupContextMenu(knownPlaces);
