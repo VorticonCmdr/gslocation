@@ -20,6 +20,15 @@ npm run package          # also creates dist/gslocation-<browser>-v<version>.zip
 
 `src/manifest.json` holds the shared manifest; `src/manifest.chrome.json` and `src/manifest.firefox.json` contain the per-browser overrides. Pushing a `v*` tag builds both zips and attaches them to a GitHub release.
 
+## v4.0 - 2026-11-10
+- New project layout: source in `src/`, per-browser builds in `dist/` via `npm run build`. A Firefox build is included (not yet tested in Firefox).
+- Location spoofing is re-applied after a browser restart, and right-click menu actions no longer overwrite your settings with the defaults.
+- Saved places stay within Chrome's sync storage limit (oldest are dropped, "places to remember" is enforced).
+- Coordinates, language and country are validated and saved as you type; invalid values are highlighted instead of saved.
+- Saving a favorite uses an inline form instead of browser dialogs.
+- The UULE cookie is cleared whenever spoofing is turned off, including when removing the active place on the options page.
+- System font instead of Google Fonts (no network request when opening the popup), unused code and the non-functional consent option removed; package is about 15% smaller.
+
 ## v3.9 - 2026-04-05
 Thanks to [bhagyesh11698](https://github.com/bhagyesh11698) for a major contribution: UI redesign with dark mode support, smart coordinate paste (comma-separated lat/lng), favorites panel in the popup, GL auto-sync when selecting a location, fix of the coordinate validation bug in `isLatLng()`, and a `NOTES.md` with the release zip command.
 
