@@ -93,6 +93,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
   if (changes.settings) {
     Object.assign(settings, changes.settings.newValue);
+    // Clear Google's persisted location on any enabled -> disabled transition,
+    // regardless of which UI (popup, options page, context menu) caused it.
+    if (changes.settings.oldValue?.enabled && !changes.settings.newValue?.enabled) {
+      deleteUULE();
+    }
     checkEnabled();
     setupContextMenu(knownPlaces);
   }
