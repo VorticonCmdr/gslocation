@@ -1,7 +1,6 @@
 const background = {
   options: {
-    consent: '',
-    contextnumber: 3,
+      contextnumber: 3,
     maxplaces: 100,
     useGoogleEndpoint: false
   },
@@ -82,7 +81,6 @@ function getOptions() {
     }
     $('#input-contextnumber').val(result['options']['contextnumber']);
     $('#input-maxplaces').val(result['options']['maxplaces']);
-    $('#input-consent').val(result['options']['consent']);
     $('#checkbox-use-google').prop('checked', result['options']['useGoogleEndpoint'] || false);
 
     $('#checkbox-use-google').on('change', function() {
@@ -113,12 +111,6 @@ function getOptions() {
           }
         });
       });
-    });
-
-    $('#button-consent').on('click', function() {
-      result['options']['consent'] = $('#input-consent').val() || '';
-      chrome.storage.sync.set(result);
-      background.options.consent = result['options']['consent'];
     });
   });
 }

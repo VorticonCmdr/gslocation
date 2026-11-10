@@ -1,5 +1,4 @@
 const options = {
-  consent: '',
   contextnumber: 3,
   maxplaces: 100
 };
