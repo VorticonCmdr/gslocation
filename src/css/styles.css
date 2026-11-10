@@ -122,6 +122,22 @@ body {
   box-shadow: none !important;
 }
 
+/* Popup status line (replaces alert()) */
+.popup-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--success-color);
+  padding: 0 0.25rem 0.25rem;
+}
+
+.popup-status:empty {
+  display: none;
+}
+
+.popup-status.is-error {
+  color: var(--danger-color);
+}
+
 /* Invalid value (e.g. out-of-range coordinate); the rules above remove borders */
 .input-group .form-control.is-invalid {
   box-shadow: inset 0 0 0 2px var(--danger-color) !important;

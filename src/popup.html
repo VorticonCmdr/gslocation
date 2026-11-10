@@ -29,6 +29,20 @@
       </div>
     </div>
 
+    <!-- Inline "save favorite" form (replaces prompt()) -->
+    <div id="favorite-form" class="row px-0 border-0 shadow-none bg-transparent d-none">
+      <div class="input-group">
+        <input id="favorite-name" type="text" class="form-control" maxlength="100"
+          placeholder="Name for this favorite" aria-label="Name for this favorite">
+        <div class="input-group-append">
+          <button class="btn btn-primary" type="button" id="favorite-save">Save</button>
+          <button class="btn btn-outline-secondary" type="button" id="favorite-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <!-- Status line (replaces alert()) -->
+    <div id="popup-status" class="popup-status" role="status" aria-live="polite"></div>
+
     <div class="row section-localization px-0 border-0 shadow-none bg-transparent">
       <div class="col-6 pl-0 pr-1">
         <div class="input-group">

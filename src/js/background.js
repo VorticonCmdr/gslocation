@@ -35,6 +35,11 @@ function genUULE(coords) {
 }
 
 function genAcceptLanguage() {
+  // hl may already carry a region/script (pt-BR, es-419, sr-Latn); don't
+  // append gl again (would give "pt-BR-BR").
+  if (String(settings.hl).includes('-')) {
+    return settings.hl;
+  }
   return `${settings.hl}-${settings.gl}`;
 }
 

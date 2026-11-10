@@ -843,50 +843,130 @@ function loadHandler() {
   // Save right away when leaving the field or pressing Enter.
   $("#latitude, #longitude").on("change", persistCoords);
 
-  // Manual entry of languages
-  $("#hl, #gl").on("change", function () {
-    background.settings.hl = $("#hl").val() || $("#hl").attr("placeholder") || "en";
-    background.settings.gl = $("#gl").val() || $("#gl").attr("placeholder") || "US";
+  // Manual entry of language (hl) and country (gl).
+  // Saved after a short pause or on change, so closing the popup right after
+  // typing doesn't lose the edit. Only valid codes are saved: a malformed
+  // value makes the header rule update fail and leaves the old rule active.
+  // hl: 2-3 letter language, optionally with script/region/area
+  // (pt-BR, es-419, sr-Latn); gl: 2-letter country.
+  var HL_RE = /^[a-z]{2,3}(-([A-Za-z]{4}|[A-Za-z]{2}|\d{3}))?$/;
+  var GL_RE = /^[A-Za-z]{2}$/;
+  var localeSaveTimer = null;
+
+  function persistLocale() {
+    clearTimeout(localeSaveTimer);
+    localeSaveTimer = null;
+    // Lowercase the language subtag so "DE" or "Pt-BR" are accepted.
+    var hl = ($("#hl").val().trim() || background.settings.hl || "en")
+      .replace(/^[A-Za-z]{2,3}/, function (m) { return m.toLowerCase(); });
+    var gl = ($("#gl").val().trim() || background.settings.gl || "US").toUpperCase();
+    var hlOk = HL_RE.test(hl);
+    var glOk = GL_RE.test(gl);
+    $("#hl").toggleClass("is-invalid", !hlOk);
+    $("#gl").toggleClass("is-invalid", !glOk);
+    if (!hlOk || !glOk) {
+      return;
+    }
+    if ($("#hl").val()) {
+      $("#hl").val(hl);
+    }
+    if ($("#gl").val()) {
+      $("#gl").val(gl);
+    }
+    if (hl === background.settings.hl && gl === background.settings.gl) {
+      return;
+    }
+    background.settings.hl = hl;
+    background.settings.gl = gl;
     background.settings.timestamp = new Date().getTime();
     chrome.storage.sync.set({ settings: background.settings });
+  }
+
+  $("#hl, #gl").on("input", function () {
+    clearTimeout(localeSaveTimer);
+    localeSaveTimer = setTimeout(persistLocale, 500);
   });
+  $("#hl, #gl").on("change", persistLocale);
 
+  // Status line that replaces alert(): native dialogs block the popup and
+  // tend to close it in Firefox.
+  var statusTimer = null;
+  function showStatus(message, isError) {
+    clearTimeout(statusTimer);
+    $("#popup-status").text(message).toggleClass("is-error", !!isError);
+    statusTimer = setTimeout(function () {
+      $("#popup-status").text("");
+    }, isError ? 8000 : 4000);
+  }
 
-  $("#btn-favorite").on("click", function () {
-    var currentName = $("#place").val().trim() || $("#place").attr("placeholder").trim();
-    if (currentName === "Google Building 40...") currentName = "";
+  // Inline "save favorite" form that replaces prompt().
+  function openFavoriteForm() {
+    var currentName = $("#place").val().trim() || background.settings.name || background.settings.location || "";
+    $("#favorite-form").removeClass("d-none");
+    $("#favorite-name").val(currentName).trigger("focus").trigger("select");
+  }
 
-    var locName = prompt("Enter a name for this custom location (Favorite):", currentName);
-    if (!locName) return; // Cancelled
+  function closeFavoriteForm() {
+    $("#favorite-form").addClass("d-none");
+    $("#favorite-name").val("").removeClass("is-invalid");
+  }
 
-    // Update settings with the explicit custom name
-    background.settings.location = locName;
-    background.settings.name = locName;
-    background.settings.placeId = "fav_" + new Date().getTime(); // ensure unique placeId
-    background.settings.timestamp = new Date().getTime();
+  function saveFavorite() {
+    var locName = $("#favorite-name").val().trim();
+    if (!locName) {
+      $("#favorite-name").addClass("is-invalid").trigger("focus");
+      return;
+    }
+    var now = new Date().getTime();
+    // Build the favorite first; only apply it to settings once it's stored.
+    var newFavorite = Object.assign({}, background.settings, {
+      location: locName,
+      name: locName,
+      placeId: "fav_" + now, // unique placeId
+      timestamp: now,
+    });
+    var places = [newFavorite].concat(background.knownPlaces.filter(function (p) {
+      return p.placeId !== newFavorite.placeId;
+    }));
+    var newSettings = Object.assign({}, background.settings, newFavorite);
 
-    // Save to knownPlaces array
-    var newFavorite = Object.assign({}, background.settings);
-    // Remove if exactly same placeId exists (unlikely given timestamp, but good practice)
-    background.knownPlaces = background.knownPlaces.filter(p => p.placeId !== newFavorite.placeId);
-
-    // Unshift to put it at the top of the context menu
-    background.knownPlaces.unshift(newFavorite);
-
-    saveKnownPlaces(background.knownPlaces, { settings: background.settings }, function (res) {
+    saveKnownPlaces(places, { settings: newSettings }, function (res) {
       if (res.error) {
-        alert("Could not save favorite: " + res.error);
+        showStatus("Could not save favorite: " + res.error, true);
         return;
       }
+      Object.assign(background.settings, newSettings);
       background.knownPlaces = res.places;
-      $("#place").prop("placeholder", locName);
-      $("#place").val("");
+      $("#place").prop("placeholder", locName).val("");
+      closeFavoriteForm();
       var note = res.dropped
-        ? "\n\nThe " + res.dropped + " oldest favorite(s) were removed to stay within the sync storage limit."
+        ? " The " + res.dropped + " oldest favorite(s) were removed to fit the sync storage limit."
         : "";
-      alert("⭐ Saved '" + locName + "' to Favorites!" + note);
+      showStatus("⭐ Saved '" + locName + "' to favorites." + note, false);
       renderFavorites();
     });
+  }
+
+  $("#btn-favorite").on("click", function () {
+    if ($("#favorite-form").hasClass("d-none")) {
+      openFavoriteForm();
+    } else {
+      closeFavoriteForm();
+    }
+  });
+  $("#favorite-save").on("click", saveFavorite);
+  $("#favorite-cancel").on("click", closeFavoriteForm);
+  $("#favorite-name").on("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveFavorite();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeFavoriteForm();
+      $("#btn-favorite").trigger("focus");
+    }
+  }).on("input", function () {
+    $(this).removeClass("is-invalid");
   });
 
   var enabled = document.querySelector("#enabled");
