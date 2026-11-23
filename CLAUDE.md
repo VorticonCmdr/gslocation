@@ -43,7 +43,7 @@ After editing anything in `src/`, rebuild and reload the extension.
 
 **Key mechanisms:**
 - `src/js/background.js` (service worker): owns the `declarativeNetRequest` session rules. On startup or storage change it calls `checkEnabled()` which adds/removes rule ID 1 (x-geo + accept-language headers) and rule ID 2/3 if applicable. Also manages the right-click context menu showing the N most-recently-used places (`options.contextnumber`, default 3).
-- `src/js/popup.js`: the popup UI. Uses [Bloodhound/Typeahead.js](https://github.com/twitter/typeahead.js) to autocomplete place names by querying `https://www.google.com/s?tbm=map&...`. Writes to `chrome.storage.sync` which triggers the background listener.
+- `src/js/popup.js`: the popup UI. Autocompletes place names with `createAutocomplete()` from `src/js/autocomplete.js` (a small dependency-free dropdown), fetching suggestions from Photon (`https://photon.komoot.io/api/`) or, with `options.useGoogleEndpoint`, from `https://www.google.com/s?tbm=map&...`. The region picker uses the same dropdown over the hardcoded `google_sites` array. Writes to `chrome.storage.sync` which triggers the background listener.
 - `src/js/options.js`: the options page UI. Manages the `knownPlaces` table (rows built with DOM nodes in `knownPlaceRow()`) and the `options` object.
 
 **UULE encoding** (`genUULE()` in `background.js`): multiplies lat/lng by 1e7, embeds in a proto-text format, base64-encodes it, and prefixes with `"a "`. This is the value sent as the `x-geo` request header.

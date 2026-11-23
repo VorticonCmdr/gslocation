@@ -53,8 +53,6 @@ function checkEnabled() {
   }
 }
 
-let acEngine;
-
 const GOOGLE_PB_TEMPLATE = "%212i5%214m12%211m3%211d10427.76566217746%212d__LNG__%213d__LAT__%212m3%211f0%212f0%213f0%213m2%211i1066%212i665%214f13.1%217i20%2110b1%2112m25%211m5%2118b1%2130b1%2131m1%211b1%2134e1%212m4%215m1%216e2%2120e3%2139b1%2110b1%2112b1%2113b1%2116b1%2117m1%213e1%2120m3%215e2%216b1%2114b1%2146m1%211b0%2196b1%2199b1";
 
 function googleBiasCenter() {
@@ -68,10 +66,9 @@ function googleBiasCenter() {
 function buildGoogleSuggestUrl(query) {
   var c = googleBiasCenter();
   var pb = GOOGLE_PB_TEMPLATE.replace("__LNG__", String(c.lng)).replace("__LAT__", String(c.lat));
-  var q = (query === "%QUERY") ? "%QUERY" : encodeURIComponent(query);
   return "https://www.google.com/s?tbm=map&gs_ri=maps&suggest=p&authuser=0&hl=" +
     background.settings.hl + "&gl=" + background.settings.gl +
-    "&q=" + q + "&ech=5&pb=" + pb;
+    "&q=" + encodeURIComponent(query) + "&ech=5&pb=" + pb;
 }
 
 function parseGoogleSuggestText(data) {
@@ -112,135 +109,130 @@ function parseGoogleSuggestText(data) {
     });
 }
 
-function initEngine() {
-  chrome.storage.sync.get("options", function (result) {
-    const useGoogle = result?.options?.useGoogleEndpoint || false;
+function parsePhotonResponse(data) {
+  if (!data?.features?.length) {
+    return [];
+  }
 
-    if (acEngine) {
-      acEngine.clearRemoteCache();
-      acEngine.clear();
-    }
-
-    let remoteConfig;
-
-    if (useGoogle) {
-      remoteConfig = {
-        wildcard: "%QUERY",
-        url: buildGoogleSuggestUrl("%QUERY"),
-        rateLimitWait: 200,
-        transform: function (data) {
-          return parseGoogleSuggestText(data).slice(0, 5);
-        },
-        prepare: function (query, settings) {
-          settings.dataType = "text";
-          settings.url = buildGoogleSuggestUrl(query);
-          return settings;
-        }
+  return data.features
+    .filter((item) => {
+      return item?.geometry?.type == "Point" && item?.properties?.type;
+    })
+    .map((location) => {
+      let nameArray = [
+        location?.properties?.name,
+        location?.properties?.country,
+      ];
+      switch (location.properties.type) {
+        case "district":
+          nameArray = [
+            location?.properties?.name,
+            location?.properties?.city,
+            location?.properties?.country,
+          ];
+          break;
+        case "street":
+          nameArray = [
+            location?.properties?.name,
+            location?.properties?.city,
+            location?.properties?.country,
+          ];
+          break;
+        case "house":
+          nameArray = [
+            location?.properties?.street,
+            location?.properties?.housenumber,
+            location?.properties?.city,
+            location?.properties?.state,
+            location?.properties?.country,
+          ];
+          break;
+        case "locality":
+          nameArray = [
+            location?.properties?.name,
+            location?.properties?.city,
+            location?.properties?.state,
+            location?.properties?.country,
+          ];
+          break;
+        case "city":
+          nameArray = [
+            location?.properties?.name,
+            location?.properties?.state,
+            location?.properties?.country,
+          ];
+          break;
+        case "county":
+          nameArray = [
+            location?.properties?.name,
+            location?.properties?.state,
+            location?.properties?.country,
+          ];
+          break;
+        case "state":
+          nameArray = [
+            location?.properties?.name,
+            location?.properties?.country,
+          ];
+          break;
+        case "country":
+          nameArray = [location?.properties?.name];
+          break;
+        default:
+          console.info(location.properties);
+      }
+      let name = nameArray.filter((item) => item).join(", ");
+      return {
+        latitude: location?.geometry?.coordinates?.[1] || 0,
+        longitude: location?.geometry?.coordinates?.[0] || 0,
+        location: name,
+        name: name,
+        placeId: location?.properties?.osm_id,
+        gl: location?.properties?.countrycode?.toUpperCase()
       };
-    } else {
-      remoteConfig = {
-        wildcard: "%QUERY",
-        url: `https://photon.komoot.io/api/?q=%QUERY&limit=3`,
-        rateLimitWait: 200,
-        transform: function (data) {
-          if (data?.features?.length < 1) {
-            console.log("missing location data");
-            return [];
-          }
-
-          return data.features
-            .filter((item) => {
-              return item?.geometry?.type == "Point" && item?.properties?.type;
-            })
-            .map((location) => {
-              let nameArray = [
-                location?.properties?.name,
-                location?.properties?.country,
-              ];
-              switch (location.properties.type) {
-                case "district":
-                  nameArray = [
-                    location?.properties?.name,
-                    location?.properties?.city,
-                    location?.properties?.country,
-                  ];
-                  break;
-                case "street":
-                  nameArray = [
-                    location?.properties?.name,
-                    location?.properties?.city,
-                    location?.properties?.country,
-                  ];
-                  break;
-                case "house":
-                  nameArray = [
-                    location?.properties?.street,
-                    location?.properties?.housenumber,
-                    location?.properties?.city,
-                    location?.properties?.state,
-                    location?.properties?.country,
-                  ];
-                  break;
-                case "locality":
-                  nameArray = [
-                    location?.properties?.name,
-                    location?.properties?.city,
-                    location?.properties?.state,
-                    location?.properties?.country,
-                  ];
-                  break;
-                case "city":
-                  nameArray = [
-                    location?.properties?.name,
-                    location?.properties?.state,
-                    location?.properties?.country,
-                  ];
-                  break;
-                case "county":
-                  nameArray = [
-                    location?.properties?.name,
-                    location?.properties?.state,
-                    location?.properties?.country,
-                  ];
-                  break;
-                case "state":
-                  nameArray = [
-                    location?.properties?.name,
-                    location?.properties?.country,
-                  ];
-                  break;
-                case "country":
-                  nameArray = [location?.properties?.name];
-                  break;
-                default:
-                  console.info(location.properties);
-              }
-              let name = nameArray.filter((item) => item).join(", ");
-              return {
-                latitude: location?.geometry?.coordinates?.[1] || 0,
-                longitude: location?.geometry?.coordinates?.[0] || 0,
-                location: name,
-                name: name,
-                placeId: location?.properties?.osm_id,
-                gl: location?.properties?.countrycode?.toUpperCase()
-              };
-            });
-        },
-        prepare: function (query, settings) {
-          settings.dataType = "json";
-          settings.url = settings.url.replace("%QUERY", encodeURIComponent(query));
-          return settings;
-        }
-      };
-    }
-
-    acEngine = new Bloodhound({
-      datumTokenizer: Bloodhound.tokenizers.obj.whitespace("location", "name"),
-      queryTokenizer: Bloodhound.tokenizers.whitespace,
-      remote: remoteConfig
     });
-    acEngine.initialize(true);
+}
+
+// Place search: Photon (Komoot) by default, or Google's unofficial suggest
+// endpoint when options.useGoogleEndpoint is set.
+let useGoogleEndpoint = false;
+let placeAutocomplete = null;
+const placeSearchCache = new Map();
+
+function loadSearchProvider() {
+  // Closing also cancels any in-flight lookup for the previous provider.
+  if (placeAutocomplete) {
+    placeAutocomplete.close();
+  }
+  chrome.storage.sync.get("options", function (result) {
+    useGoogleEndpoint = !!(result?.options?.useGoogleEndpoint);
+    placeSearchCache.clear();
   });
+}
+
+function searchPlaces(query, signal) {
+  const google = useGoogleEndpoint;
+  const url = google
+    ? buildGoogleSuggestUrl(query)
+    : "https://photon.komoot.io/api/?q=" + encodeURIComponent(query) + "&limit=3";
+  if (placeSearchCache.has(url)) {
+    return placeSearchCache.get(url);
+  }
+  return fetch(url, { signal: signal })
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("place search failed: HTTP " + response.status);
+      }
+      return google ? response.text() : response.json();
+    })
+    .then(function (data) {
+      const places = google ? parseGoogleSuggestText(data).slice(0, 5) : parsePhotonResponse(data);
+      if (placeSearchCache.size >= 50) {
+        placeSearchCache.clear();
+      }
+      placeSearchCache.set(url, places);
+      return places;
+    });
 }
 
 
@@ -639,61 +631,38 @@ const google_sites = [
   {"name":"Sri Lanka","gl":"LK","lang":"தமிழ்","hl":"ta"},
   {"name":"São Tomé & Príncipe","gl":"ST","lang":"Português (Portugal)","hl":"pt-PT"}
 ];
-var regionsBloodhound = new Bloodhound({
-  datumTokenizer: Bloodhound.tokenizers.obj.whitespace("name", "lang"),
-  queryTokenizer: Bloodhound.tokenizers.whitespace,
-  identify: function (obj) {
-    return obj.hl + obj.gl;
-  },
-  local: google_sites,
-});
-// Suggestion rows are built with DOM nodes (textContent), so names coming
-// from the search providers can never be parsed as HTML.
-function regionsTemplate(region) {
-  var p = document.createElement("p");
-  var lang = document.createElement("span");
-  lang.textContent = region.lang;
-  p.append(region.name + " - ", lang);
-  return p;
-}
-
-function locationsTemplate(place) {
-  var p = document.createElement("p");
-  p.textContent = place.location;
-  return p;
-}
-
-initEngine();
-$("#place")
-  .typeahead(
-    {
-      hint: true,
-      highlight: true,
-      minLength: 1,
-      limit: 4,
-    },
-    {
-      limit: 10,
-      display: "location",
-      name: "locations",
-      source: function (q, sync, async) {
-        acEngine.search(q, sync, async);
-      },
-      templates: {
-        suggestion: locationsTemplate,
-      },
-    },
-  )
-  .bind("typeahead:select", function (ev, suggestion) {
-    applyPlaceSuggestion(suggestion);
+// Region picker: every word typed must start a word of the region name or language.
+function searchRegions(query) {
+  var words = query.toLowerCase().split(/\s+/).filter(function (word) {
+    return word && word !== "-";
   });
+  return google_sites.filter(function (site) {
+    var tokens = (site.name + " " + site.lang).toLowerCase().split(/\s+/);
+    return words.every(function (word) {
+      return tokens.some(function (token) { return token.startsWith(word); });
+    });
+  });
+}
+
+function regionLabel(site) {
+  return site.name + " - " + site.lang;
+}
+
+loadSearchProvider();
+placeAutocomplete = createAutocomplete(document.getElementById("place"), {
+  minLength: 1,
+  limit: 10,
+  debounce: 200,
+  source: searchPlaces,
+  display: function (place) { return place.location; },
+  onSelect: applyPlaceSuggestion,
+});
 
 
 function applyPlaceSuggestion(suggestion) {
     $("#latitude").val(suggestion.latitude);
     $("#longitude").val(suggestion.longitude);
     $("#place").prop("placeholder", suggestion.name);
-    $("#place").typeahead("close");
     $("#place").val("");
 
     background.settings.latitude = suggestion.latitude;
@@ -796,7 +765,7 @@ function loadHandler() {
       var opts = (res && res.options) || {};
       opts.useGoogleEndpoint = useGoogle;
       chrome.storage.sync.set({ options: opts }, function () {
-        initEngine();
+        loadSearchProvider();
       });
     });
   });
@@ -987,33 +956,21 @@ function loadHandler() {
 
   checkEnabled();
 
-  $("#regions").typeahead(
-    {
-      hint: true,
-      highlight: true,
-      minLength: 1,
-      limit: 10,
+  createAutocomplete(document.getElementById("regions"), {
+    minLength: 1,
+    limit: 10,
+    source: searchRegions,
+    display: regionLabel,
+    onSelect: function (data) {
+      $("#hl").val(data.hl);
+      $("#gl").val(data.gl);
+      background.settings.hl = data.hl;
+      background.settings.gl = data.gl;
+      background.settings.regions = regionLabel(data);
+      $("#regions").prop("placeholder", background.settings.regions);
+      background.settings.timestamp = new Date().getTime();
+      chrome.storage.sync.set({ settings: background.settings });
     },
-    {
-      display: function (obj) {
-        return obj.name + " - " + obj.lang;
-      },
-      name: "states",
-      source: regionsBloodhound,
-      templates: {
-        suggestion: regionsTemplate,
-      },
-    },
-  );
-  $("#regions").bind("typeahead:select", function (ev, data) {
-    $("#hl").val(data.hl);
-    $("#gl").val(data.gl);
-    background.settings.hl = data.hl;
-    background.settings.gl = data.gl;
-    background.settings.regions = data.name + " - " + data.lang;
-    $("#regions").prop("placeholder", background.settings.regions);
-    background.settings.timestamp = new Date().getTime();
-    chrome.storage.sync.set({ settings: background.settings });
   });
 
   function renderFavorites() {

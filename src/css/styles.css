@@ -74,7 +74,7 @@ body {
   box-shadow: var(--shadow);
   border-radius: 8px;
   border: 1px solid var(--border-color);
-  overflow: visible !important; /* Allow typeahead dropdown to show */
+  overflow: visible !important; /* Allow the autocomplete dropdown to show */
 }
 
 .input-group-text {
@@ -237,13 +237,17 @@ input:checked + .slider:before {
   background: var(--bg-color);
 }
 
-/* --- Twitter Typeahead Fixes --- */
-.twitter-typeahead {
+/* --- Autocomplete dropdown (js/autocomplete.js) --- */
+.ac-wrap {
+  position: relative;
   flex: 1 1 auto !important;
   display: flex !important;
 }
 
-.tt-menu {
+.ac-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
   width: 100% !important;
   background-color: var(--panel-bg) !important;
   border: 1px solid var(--border-color);
@@ -255,18 +259,22 @@ input:checked + .slider:before {
   overflow: hidden; /* Keep suggestions within menu radius */
 }
 
-.tt-suggestion {
+.ac-menu[hidden] {
+  display: none;
+}
+
+.ac-item {
   padding: 10px 15px;
   cursor: pointer;
   border-bottom: 1px solid var(--border-color);
   transition: background 0.2s ease;
 }
 
-.tt-suggestion:last-child {
+.ac-item:last-child {
   border-bottom: none;
 }
 
-.tt-suggestion:hover, .tt-suggestion.tt-cursor {
+.ac-item:hover, .ac-item.ac-active {
   background-color: var(--accent-glow) !important;
   color: var(--accent-color);
 }
@@ -287,12 +295,12 @@ input:checked + .slider:before {
   border-bottom-right-radius: 8px !important;
 }
 
-/* Correctly target the Typeahead wrapper and the underlying input */
-.input-group > .twitter-typeahead {
+/* Correctly target the autocomplete wrapper and the underlying input */
+.input-group > .ac-wrap {
   flex: 1 1 auto !important;
 }
 
-.input-group > .twitter-typeahead .form-control {
+.input-group > .ac-wrap .form-control {
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
 }

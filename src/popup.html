@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="css/bootstrap.min.v4.6.1.css">
   <link rel="stylesheet" href="css/styles.css">
   <script type="text/javascript" src="js/jquery-3.7.1.min.js"></script>
-  <script type="text/javascript" src="js/typeahead.bundle.min.0.11.1.js"></script>
 </head>
 
 <body class="popup-mode">
@@ -18,7 +17,7 @@
         <div class="input-group-prepend">
           <span class="input-group-text">Location</span>
         </div>
-        <input id="place" type="text" class="form-control" aria-label="location" placeholder="Search for a place...">
+        <input id="place" type="text" class="form-control" autocomplete="off" aria-label="location" placeholder="Search for a place...">
         <div class="input-group-append">
           <button class="btn btn-outline-warning" type="button" id="btn-favorite" title="Save to Favorites">⭐
             Save</button>
@@ -85,7 +84,7 @@
 
       <div class="col-12 px-0 mt-2 d-flex align-items-center">
         <div style="flex-grow: 1;">
-          <input id="regions" class="typeahead form-control" autocomplete="off" type="text" aria-hidden="true"
+          <input id="regions" class="form-control" autocomplete="off" type="text" aria-label="Google region"
             placeholder="Select Google Region" />
         </div>
         <div class="ml-2 d-flex align-items-center">
@@ -132,6 +131,7 @@
 
   </div>
   <script type="text/javascript" src="js/places.js"></script>
+  <script type="text/javascript" src="js/autocomplete.js"></script>
   <script type="text/javascript" src="js/popup.js"></script>
 </body>
 

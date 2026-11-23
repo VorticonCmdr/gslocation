@@ -69,7 +69,6 @@ Third-party libraries, included unmodified from their official releases:
 | File | Source |
 |---|---|
 | `src/js/jquery-3.7.1.min.js` | https://code.jquery.com/jquery-3.7.1.min.js |
-| `src/js/typeahead.bundle.min.0.11.1.js` | https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js |
 | `src/css/bootstrap.min.v4.6.1.css` | https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css |
 
 ## Changelog
