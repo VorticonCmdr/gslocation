@@ -647,8 +647,21 @@ var regionsBloodhound = new Bloodhound({
   },
   local: google_sites,
 });
-const regionsTemplate = Handlebars.templates.typeahead;
-const locationsTemplate = Handlebars.templates.locations;
+// Suggestion rows are built with DOM nodes (textContent), so names coming
+// from the search providers can never be parsed as HTML.
+function regionsTemplate(region) {
+  var p = document.createElement("p");
+  var lang = document.createElement("span");
+  lang.textContent = region.lang;
+  p.append(region.name + " - ", lang);
+  return p;
+}
+
+function locationsTemplate(place) {
+  var p = document.createElement("p");
+  p.textContent = place.location;
+  return p;
+}
 
 initEngine();
 $("#place")

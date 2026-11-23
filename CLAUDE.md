@@ -13,7 +13,6 @@ There is no bundler, no runtime npm dependencies, and no test suite. All JS is p
 - `src/` — extension source. `src/manifest.json` is the shared manifest; `src/manifest.chrome.json` / `src/manifest.firefox.json` are shallow-merged over it per target.
 - `scripts/build.mjs` — copies `src/` to `dist/<target>/` and writes the merged manifest. `--zip` also writes `dist/gslocation-<target>-v<version>.zip`.
 - `dist/` — generated, gitignored. Never edit files there.
-- `templates/` — Handlebars template sources (not shipped).
 - `docs/` — GitHub Pages site (`docs/index.html`, one static file, relative asset paths only, no external requests).
 - No remote fonts/CSS: pages use the system font stack (no network request on popup open).
 
@@ -35,16 +34,6 @@ Run `npm run build`, then:
 
 After editing anything in `src/`, rebuild and reload the extension.
 
-## Handlebars templates
-
-The `.handlebars` sources must be precompiled into `src/js/*.precompiled.js` after any template change:
-
-```sh
-npm run templates   # templates/{knownplaces,typeahead,locations}.handlebars -> src/js/*.precompiled.js (handlebars@4.7.7)
-```
-
-The templates are the source of truth; never hand-edit `*.precompiled.js`. Store reviewers (AMO) rebuild them, so the output must stay byte-identical to `npm run templates`.
-
 ## Architecture
 
 **Storage schema** (`chrome.storage.sync`):
@@ -55,7 +44,6 @@ The templates are the source of truth; never hand-edit `*.precompiled.js`. Store
 **Key mechanisms:**
 - `src/js/background.js` (service worker): owns the `declarativeNetRequest` session rules. On startup or storage change it calls `checkEnabled()` which adds/removes rule ID 1 (x-geo + accept-language headers) and rule ID 2/3 if applicable. Also manages the right-click context menu showing the N most-recently-used places (`options.contextnumber`, default 3).
 - `src/js/popup.js`: the popup UI. Uses [Bloodhound/Typeahead.js](https://github.com/twitter/typeahead.js) to autocomplete place names by querying `https://www.google.com/s?tbm=map&...`. Writes to `chrome.storage.sync` which triggers the background listener.
-- `src/js/options.js`: the options page UI. Manages `knownPlaces` table (rendered via `knownplaces` Handlebars template) and the `options` object.
-- `src/js/locations.precompiled.js`: precompiled Handlebars template for the regions/language typeahead dropdown (powered by the hardcoded `google_sites` array in `popup.js`).
+- `src/js/options.js`: the options page UI. Manages the `knownPlaces` table (rows built with DOM nodes in `knownPlaceRow()`) and the `options` object.
 
 **UULE encoding** (`genUULE()` in `background.js`): multiplies lat/lng by 1e7, embeds in a proto-text format, base64-encodes it, and prefixes with `"a "`. This is the value sent as the `x-geo` request header.

@@ -38,36 +38,73 @@ function compareTimestamp(a, b) {
   }
 }
 
-const knownPlacesTemplate = Handlebars.templates.knownplaces;
+function removeKnownPlace(places, place) {
+  var index = places.indexOf(place);
+  if (index === -1) {
+    return;
+  }
+  places.splice(index, 1);
+  background.knownPlaces = places;
+  // Compare against the stored active settings, not the local defaults.
+  // The background service worker updates the icon and header rules via
+  // storage.onChanged when settings.enabled flips to false.
+  chrome.storage.sync.get("settings", function(stored) {
+    var extra = {};
+    if (stored.settings && String(stored.settings.placeId) === String(place.placeId)) {
+      Object.assign(background.settings, stored.settings);
+      background.settings.enabled = false;
+      background.settings.timestamp = new Date().getTime();
+      extra.settings = background.settings;
+    }
+    saveKnownPlaces(background.knownPlaces, extra, function () {
+      getKnownPlaces();
+    });
+  });
+}
+
+// Builds one table row with DOM nodes (textContent), so place names coming
+// from the search providers can never be parsed as HTML.
+function knownPlaceRow(places, place) {
+  var row = document.createElement('tr');
+
+  var name = document.createElement('th');
+  name.scope = 'row';
+  name.textContent = place.location ?? '';
+  row.appendChild(name);
+
+  ['latitude', 'longitude', 'hl', 'gl'].forEach(function(field) {
+    var cell = document.createElement('td');
+    cell.textContent = place[field] ?? '';
+    row.appendChild(cell);
+  });
+
+  var actions = document.createElement('td');
+  var group = document.createElement('div');
+  group.className = 'btn-group';
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'actions');
+  var remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'remove btn btn-sm btn-danger';
+  remove.textContent = 'remove';
+  remove.addEventListener('click', function() {
+    removeKnownPlace(places, place);
+  });
+  group.appendChild(remove);
+  actions.appendChild(group);
+  row.appendChild(actions);
+
+  return row;
+}
+
 function getKnownPlaces() {
   chrome.storage.sync.get("knownPlaces", function(result) {
     if (result.knownPlaces) {
-      result.knownPlaces.sort(compareTimestamp);
-      document.getElementById('knownplaces').innerHTML = knownPlacesTemplate(result);
-      $('.remove').on('click', function(event) {
-        var placeid = $(event.target).data('placeid');
-        var index = result.knownPlaces.findIndex(place => String(place.placeId) === String(placeid));
-        if (index === -1) {
-          return;
-        }
-        var removedPlace = result.knownPlaces.splice(index, 1);
-        background.knownPlaces = result.knownPlaces;
-        // Compare against the stored active settings, not the local defaults.
-        // The background service worker updates the icon and header rules via
-        // storage.onChanged when settings.enabled flips to false.
-        chrome.storage.sync.get("settings", function(stored) {
-          var extra = {};
-          if (stored.settings && String(stored.settings.placeId) === String(removedPlace[0].placeId)) {
-            Object.assign(background.settings, stored.settings);
-            background.settings.enabled = false;
-            background.settings.timestamp = new Date().getTime();
-            extra.settings = background.settings;
-          }
-          saveKnownPlaces(background.knownPlaces, extra, function () {
-            getKnownPlaces();
-          });
-        });
-      });
+      var places = result.knownPlaces;
+      places.sort(compareTimestamp);
+      document.getElementById('knownplaces').replaceChildren(
+        ...places.map(function(place) { return knownPlaceRow(places, place); })
+      );
     }
   });
 }
