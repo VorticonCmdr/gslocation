@@ -116,28 +116,32 @@ function getOptions() {
       result['options'] = background.options;
       chrome.storage.sync.set(result);
     }
-    $('#input-contextnumber').val(result['options']['contextnumber']);
-    $('#input-maxplaces').val(result['options']['maxplaces']);
-    $('#checkbox-use-google').prop('checked', result['options']['useGoogleEndpoint'] || false);
+    var contextNumber = document.getElementById('input-contextnumber');
+    var maxPlaces = document.getElementById('input-maxplaces');
+    var useGoogle = document.getElementById('checkbox-use-google');
 
-    $('#checkbox-use-google').on('change', function() {
-      result['options']['useGoogleEndpoint'] = $(this).prop('checked');
+    contextNumber.value = result['options']['contextnumber'] ?? '';
+    maxPlaces.value = result['options']['maxplaces'] ?? '';
+    useGoogle.checked = result['options']['useGoogleEndpoint'] || false;
+
+    useGoogle.addEventListener('change', function() {
+      result['options']['useGoogleEndpoint'] = useGoogle.checked;
       chrome.storage.sync.set(result);
     });
 
     chrome.storage.onChanged.addListener(function (changes, area) {
       if (area === "sync" && changes.options && changes.options.newValue) {
-        $('#checkbox-use-google').prop('checked', !!changes.options.newValue.useGoogleEndpoint);
+        useGoogle.checked = !!changes.options.newValue.useGoogleEndpoint;
       }
     });
 
-    $('#button-contextnumber').on('click', function() {
-      result['options']['contextnumber'] = parseInt($('#input-contextnumber').val()) || 3;
+    document.getElementById('button-contextnumber').addEventListener('click', function() {
+      result['options']['contextnumber'] = parseInt(contextNumber.value) || 3;
       chrome.storage.sync.set(result);
     });
 
-    $('#button-maxplaces').on('click', function() {
-      result['options']['maxplaces'] = parseInt($('#input-maxplaces').val()) || 100;
+    document.getElementById('button-maxplaces').addEventListener('click', function() {
+      result['options']['maxplaces'] = parseInt(maxPlaces.value) || 100;
       chrome.storage.sync.set(result, function() {
         // Apply the new limit to the stored list right away.
         chrome.storage.sync.get('knownPlaces', function(stored) {
@@ -159,12 +163,10 @@ getOptions();
 const requiredOrigins = { origins: chrome.runtime.getManifest().host_permissions || [] };
 function updatePermissionAlert() {
   chrome.permissions.contains(requiredOrigins, (granted) => {
-    $('#permission-alert').toggleClass('d-none', !!granted);
+    document.getElementById('permission-alert').classList.toggle('d-none', !!granted);
   });
 }
-$(function() {
-  $('#button-grant-permissions').on('click', function() {
-    chrome.permissions.request(requiredOrigins, () => updatePermissionAlert());
-  });
-  updatePermissionAlert();
+document.getElementById('button-grant-permissions').addEventListener('click', function() {
+  chrome.permissions.request(requiredOrigins, () => updatePermissionAlert());
 });
+updatePermissionAlert();

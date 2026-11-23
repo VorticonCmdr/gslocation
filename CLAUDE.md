@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Manifest V3 browser extension (Chrome and Firefox builds from one source) that spoofs Google Search location by injecting the `x-geo` header (containing a UULE-encoded lat/lng) and `accept-language` header on requests to `google.com`. It also deletes the `UULE` cookie when disabling, since Google writes that cookie to persist location state.
 
-There is no bundler, no runtime npm dependencies, and no test suite. All JS is plain browser JavaScript (using the `chrome.*` namespace, which Firefox also supports).
+There is no bundler, no runtime npm dependencies, and no test suite. All JS is plain browser JavaScript (using the `chrome.*` namespace, which Firefox also supports). There are no third-party JS libraries (no jQuery): use the DOM API directly, and build markup with `createElement`/`textContent` rather than `innerHTML`, which AMO's linter flags.
 
 ## Layout and build
 

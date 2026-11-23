@@ -64,11 +64,10 @@ node scripts/build.mjs --zip     # also writes dist/gslocation-<browser>-v<versi
 
 The build copies `src/` unchanged and writes `manifest.json` by merging `src/manifest.json` with `src/manifest.<browser>.json`. Nothing is minified, bundled or transpiled.
 
-Third-party libraries, included unmodified from their official releases:
+There are no third-party JavaScript libraries. The only third-party file is the stylesheet, included unmodified from its official release:
 
 | File | Source |
 |---|---|
-| `src/js/jquery-3.7.1.min.js` | https://code.jquery.com/jquery-3.7.1.min.js |
 | `src/css/bootstrap.min.v4.6.1.css` | https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css |
 
 ## Changelog

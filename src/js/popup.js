@@ -1,3 +1,21 @@
+function byId(id) {
+  return document.getElementById(id);
+}
+
+// Sets an input's value; a missing value clears the field instead of
+// writing the text "undefined" into it.
+function setValue(id, value) {
+  byId(id).value = value ?? "";
+}
+
+// Sets an input's placeholder; a missing value keeps the current one instead
+// of showing the text "undefined".
+function setPlaceholder(id, value) {
+  if (value !== undefined && value !== null) {
+    byId(id).placeholder = value;
+  }
+}
+
 const background = {
   settings: {
     latitude: 37.422388,
@@ -36,7 +54,7 @@ chrome.storage.sync.get(null, (data) => {
   
   // Load and apply theme
   if (data.theme === 'dark') {
-    $('body').addClass('dark-mode');
+    document.body.classList.add('dark-mode');
   }
 
   checkEnabled();
@@ -45,11 +63,13 @@ chrome.storage.sync.get(null, (data) => {
 
 function checkEnabled() {
   if (background.settings.enabled) {
-    $("#enableText").text("ACTIVE").css("color", "var(--success-color)");
-    $("#enabled").prop("checked", true);
+    byId("enableText").textContent = "ACTIVE";
+    byId("enableText").style.color = "var(--success-color)";
+    byId("enabled").checked = true;
   } else {
-    $("#enableText").text("OFF").css("color", "var(--text-muted)");
-    $("#enabled").prop("checked", false);
+    byId("enableText").textContent = "OFF";
+    byId("enableText").style.color = "var(--text-muted)";
+    byId("enabled").checked = false;
   }
 }
 
@@ -660,10 +680,10 @@ placeAutocomplete = createAutocomplete(document.getElementById("place"), {
 
 
 function applyPlaceSuggestion(suggestion) {
-    $("#latitude").val(suggestion.latitude);
-    $("#longitude").val(suggestion.longitude);
-    $("#place").prop("placeholder", suggestion.name);
-    $("#place").val("");
+    setValue("latitude", suggestion.latitude);
+    setValue("longitude", suggestion.longitude);
+    setPlaceholder("place", suggestion.name);
+    setValue("place", "");
 
     background.settings.latitude = suggestion.latitude;
     background.settings.longitude = suggestion.longitude;
@@ -672,22 +692,22 @@ function applyPlaceSuggestion(suggestion) {
     background.settings.placeId = suggestion.placeId;
 
     // Conditionally update GL based on the "Sync" checkbox
-    if ($("#sync-gl").prop("checked") && suggestion.gl) {
+    if (byId("sync-gl").checked && suggestion.gl) {
       background.settings.gl = suggestion.gl;
-      $("#gl").val(suggestion.gl);
+      setValue("gl", suggestion.gl);
 
       // Update region display text if available
       var site = google_sites.find(s => s.gl === suggestion.gl);
       if (site) {
         background.settings.regions = site.name + " - " + site.lang;
-        $("#regions").prop("placeholder", background.settings.regions);
-        $("#regions").val("");
+        setPlaceholder("regions", background.settings.regions);
+        setValue("regions", "");
       }
     } else {
-      $("#gl").prop("placeholder", background.settings.gl);
-      $("#gl").val("");
-      $("#regions").prop("placeholder", background.settings.regions);
-      $("#regions").val("");
+      setPlaceholder("gl", background.settings.gl);
+      setValue("gl", "");
+      setPlaceholder("regions", background.settings.regions);
+      setValue("regions", "");
     }
 
     background.settings.timestamp = new Date().getTime();
@@ -711,11 +731,11 @@ function updateCustomLocation() {
   background.settings.location = "Custom Location";
   background.settings.name = "Custom Location";
   background.settings.placeId = "custom";
-  $("#place").prop("placeholder", "Custom Location");
+  setPlaceholder("place", "Custom Location");
 }
 
 function enabler() {
-  if ($("#enabled").prop("checked")) {
+  if (byId("enabled").checked) {
     background.settings.enabled = true;
     checkEnabled();
   } else {
@@ -731,41 +751,45 @@ function enabler() {
 
 
 function loadHandler() {
-  $("#place").prop("placeholder", background.settings.location);
-  $("#latitude").prop("placeholder", background.settings.latitude);
-  $("#longitude").prop("placeholder", background.settings.longitude);
-  $("#hl").prop("placeholder", background.settings.hl);
-  $("#gl").prop("placeholder", background.settings.gl);
-  $("#regions").prop("placeholder", background.settings.regions);
-  $("#enabled").change(enabler);
+  setPlaceholder("place", background.settings.location);
+  setPlaceholder("latitude", background.settings.latitude);
+  setPlaceholder("longitude", background.settings.longitude);
+  setPlaceholder("hl", background.settings.hl);
+  setPlaceholder("gl", background.settings.gl);
+  setPlaceholder("regions", background.settings.regions);
+  byId("enabled").addEventListener("change", enabler);
 
-  $("#sync-gl").on("change", function() {
-    chrome.storage.sync.set({ "sync-gl": $(this).prop("checked") });
+  byId("sync-gl").addEventListener("change", function() {
+    chrome.storage.sync.set({ "sync-gl": this.checked });
   });
 
   chrome.storage.sync.get("sync-gl", function(res) {
     if (res["sync-gl"] !== undefined) {
-      $("#sync-gl").prop("checked", res["sync-gl"]);
+      byId("sync-gl").checked = res["sync-gl"];
     }
   });
 
   function setProviderUI(useGoogle) {
-    $("#provider-switch button").removeClass("active");
-    $("#provider-switch button[data-provider='" + (useGoogle ? "google" : "komoot") + "']").addClass("active");
+    var active = useGoogle ? "google" : "komoot";
+    document.querySelectorAll("#provider-switch button").forEach(function (button) {
+      button.classList.toggle("active", button.dataset.provider === active);
+    });
   }
 
   chrome.storage.sync.get("options", function (res) {
     setProviderUI(!!(res.options && res.options.useGoogleEndpoint));
   });
 
-  $("#provider-switch button").on("click", function () {
-    var useGoogle = $(this).data("provider") === "google";
-    setProviderUI(useGoogle);
-    chrome.storage.sync.get("options", function (res) {
-      var opts = (res && res.options) || {};
-      opts.useGoogleEndpoint = useGoogle;
-      chrome.storage.sync.set({ options: opts }, function () {
-        loadSearchProvider();
+  document.querySelectorAll("#provider-switch button").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var useGoogle = button.dataset.provider === "google";
+      setProviderUI(useGoogle);
+      chrome.storage.sync.get("options", function (res) {
+        var opts = (res && res.options) || {};
+        opts.useGoogleEndpoint = useGoogle;
+        chrome.storage.sync.set({ options: opts }, function () {
+          loadSearchProvider();
+        });
       });
     });
   });
@@ -793,10 +817,10 @@ function loadHandler() {
   function persistCoords() {
     clearTimeout(coordSaveTimer);
     coordSaveTimer = null;
-    var lat = parseCoord($("#latitude").val(), background.settings.latitude, 90);
-    var lng = parseCoord($("#longitude").val(), background.settings.longitude, 180);
-    $("#latitude").toggleClass("is-invalid", lat === null);
-    $("#longitude").toggleClass("is-invalid", lng === null);
+    var lat = parseCoord(byId("latitude").value, background.settings.latitude, 90);
+    var lng = parseCoord(byId("longitude").value, background.settings.longitude, 180);
+    byId("latitude").classList.toggle("is-invalid", lat === null);
+    byId("longitude").classList.toggle("is-invalid", lng === null);
     if (lat === null || lng === null) {
       return;
     }
@@ -810,20 +834,23 @@ function loadHandler() {
     chrome.storage.sync.set({ settings: background.settings });
   }
 
-  $("#latitude, #longitude").on("input", function () {
-    var val = $(this).val();
-    if (val.includes(",")) {
-      // "lat, lng" pasted into either field: split it across both.
-      var parts = val.split(",");
-      $("#latitude").val(parts[0].trim());
-      $("#longitude").val(parts.slice(1).join(",").trim());
-    }
-    clearTimeout(coordSaveTimer);
-    coordSaveTimer = setTimeout(persistCoords, 500);
+  [byId("latitude"), byId("longitude")].forEach(function (field) {
+    field.addEventListener("input", function () {
+      var val = field.value;
+      if (val.includes(",")) {
+        // "lat, lng" pasted into either field: split it across both.
+        var parts = val.split(",");
+        setValue("latitude", parts[0].trim());
+        setValue("longitude", parts.slice(1).join(",").trim());
+      }
+      clearTimeout(coordSaveTimer);
+      coordSaveTimer = setTimeout(persistCoords, 500);
+    });
   });
 
   // Save right away when leaving the field or pressing Enter.
-  $("#latitude, #longitude").on("change", persistCoords);
+  byId("latitude").addEventListener("change", persistCoords);
+  byId("longitude").addEventListener("change", persistCoords);
 
   // Manual entry of language (hl) and country (gl).
   // Saved after a short pause or on change, so closing the popup right after
@@ -839,21 +866,21 @@ function loadHandler() {
     clearTimeout(localeSaveTimer);
     localeSaveTimer = null;
     // Lowercase the language subtag so "DE" or "Pt-BR" are accepted.
-    var hl = ($("#hl").val().trim() || background.settings.hl || "en")
+    var hl = (byId("hl").value.trim() || background.settings.hl || "en")
       .replace(/^[A-Za-z]{2,3}/, function (m) { return m.toLowerCase(); });
-    var gl = ($("#gl").val().trim() || background.settings.gl || "US").toUpperCase();
+    var gl = (byId("gl").value.trim() || background.settings.gl || "US").toUpperCase();
     var hlOk = HL_RE.test(hl);
     var glOk = GL_RE.test(gl);
-    $("#hl").toggleClass("is-invalid", !hlOk);
-    $("#gl").toggleClass("is-invalid", !glOk);
+    byId("hl").classList.toggle("is-invalid", !hlOk);
+    byId("gl").classList.toggle("is-invalid", !glOk);
     if (!hlOk || !glOk) {
       return;
     }
-    if ($("#hl").val()) {
-      $("#hl").val(hl);
+    if (byId("hl").value) {
+      setValue("hl", hl);
     }
-    if ($("#gl").val()) {
-      $("#gl").val(gl);
+    if (byId("gl").value) {
+      setValue("gl", gl);
     }
     if (hl === background.settings.hl && gl === background.settings.gl) {
       return;
@@ -864,39 +891,46 @@ function loadHandler() {
     chrome.storage.sync.set({ settings: background.settings });
   }
 
-  $("#hl, #gl").on("input", function () {
-    clearTimeout(localeSaveTimer);
-    localeSaveTimer = setTimeout(persistLocale, 500);
+  [byId("hl"), byId("gl")].forEach(function (field) {
+    field.addEventListener("input", function () {
+      clearTimeout(localeSaveTimer);
+      localeSaveTimer = setTimeout(persistLocale, 500);
+    });
+    field.addEventListener("change", persistLocale);
   });
-  $("#hl, #gl").on("change", persistLocale);
 
   // Status line that replaces alert(): native dialogs block the popup and
   // tend to close it in Firefox.
   var statusTimer = null;
   function showStatus(message, isError) {
     clearTimeout(statusTimer);
-    $("#popup-status").text(message).toggleClass("is-error", !!isError);
+    byId("popup-status").textContent = message;
+    byId("popup-status").classList.toggle("is-error", !!isError);
     statusTimer = setTimeout(function () {
-      $("#popup-status").text("");
+      byId("popup-status").textContent = "";
     }, isError ? 8000 : 4000);
   }
 
   // Inline "save favorite" form that replaces prompt().
   function openFavoriteForm() {
-    var currentName = $("#place").val().trim() || background.settings.name || background.settings.location || "";
-    $("#favorite-form").removeClass("d-none");
-    $("#favorite-name").val(currentName).trigger("focus").trigger("select");
+    var currentName = byId("place").value.trim() || background.settings.name || background.settings.location || "";
+    byId("favorite-form").classList.remove("d-none");
+    setValue("favorite-name", currentName);
+    byId("favorite-name").focus();
+    byId("favorite-name").select();
   }
 
   function closeFavoriteForm() {
-    $("#favorite-form").addClass("d-none");
-    $("#favorite-name").val("").removeClass("is-invalid");
+    byId("favorite-form").classList.add("d-none");
+    setValue("favorite-name", "");
+    byId("favorite-name").classList.remove("is-invalid");
   }
 
   function saveFavorite() {
-    var locName = $("#favorite-name").val().trim();
+    var locName = byId("favorite-name").value.trim();
     if (!locName) {
-      $("#favorite-name").addClass("is-invalid").trigger("focus");
+      byId("favorite-name").classList.add("is-invalid");
+      byId("favorite-name").focus();
       return;
     }
     var now = new Date().getTime();
@@ -919,7 +953,8 @@ function loadHandler() {
       }
       Object.assign(background.settings, newSettings);
       background.knownPlaces = res.places;
-      $("#place").prop("placeholder", locName).val("");
+      setPlaceholder("place", locName);
+      setValue("place", "");
       closeFavoriteForm();
       var note = res.dropped
         ? " The " + res.dropped + " oldest favorite(s) were removed to fit the sync storage limit."
@@ -929,26 +964,27 @@ function loadHandler() {
     });
   }
 
-  $("#btn-favorite").on("click", function () {
-    if ($("#favorite-form").hasClass("d-none")) {
+  byId("btn-favorite").addEventListener("click", function () {
+    if (byId("favorite-form").classList.contains("d-none")) {
       openFavoriteForm();
     } else {
       closeFavoriteForm();
     }
   });
-  $("#favorite-save").on("click", saveFavorite);
-  $("#favorite-cancel").on("click", closeFavoriteForm);
-  $("#favorite-name").on("keydown", function (e) {
+  byId("favorite-save").addEventListener("click", saveFavorite);
+  byId("favorite-cancel").addEventListener("click", closeFavoriteForm);
+  byId("favorite-name").addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
       saveFavorite();
     } else if (e.key === "Escape") {
       e.preventDefault();
       closeFavoriteForm();
-      $("#btn-favorite").trigger("focus");
+      byId("btn-favorite").focus();
     }
-  }).on("input", function () {
-    $(this).removeClass("is-invalid");
+  });
+  byId("favorite-name").addEventListener("input", function () {
+    this.classList.remove("is-invalid");
   });
 
   var enabled = document.querySelector("#enabled");
@@ -962,36 +998,47 @@ function loadHandler() {
     source: searchRegions,
     display: regionLabel,
     onSelect: function (data) {
-      $("#hl").val(data.hl);
-      $("#gl").val(data.gl);
+      setValue("hl", data.hl);
+      setValue("gl", data.gl);
       background.settings.hl = data.hl;
       background.settings.gl = data.gl;
       background.settings.regions = regionLabel(data);
-      $("#regions").prop("placeholder", background.settings.regions);
+      setPlaceholder("regions", background.settings.regions);
       background.settings.timestamp = new Date().getTime();
       chrome.storage.sync.set({ settings: background.settings });
     },
   });
 
   function renderFavorites() {
-    var container = $("#favorites-container");
-    container.empty();
+    var container = byId("favorites-container");
+    container.replaceChildren();
 
     // The very first item is often the default "Google Building 40" if never modified.
     // If it's the only one, users might not think of it as a favorite they saved explicitly,
     // but returning it is fine.
     if (!background.knownPlaces || background.knownPlaces.length === 0) {
-      container.append('<div class="list-group-item text-muted">No favorites saved yet.</div>');
+      var empty = document.createElement("div");
+      empty.className = "list-group-item text-muted";
+      empty.textContent = "No favorites saved yet.";
+      container.append(empty);
       return;
     }
 
     background.knownPlaces.forEach(function (place, index) {
-      var item = $('<button type="button" class="list-group-item list-group-item-action py-1 px-2 d-flex justify-content-between align-items-center">');
+      var item = document.createElement("button");
+      item.type = "button";
+      item.className = "list-group-item list-group-item-action py-1 px-2 d-flex justify-content-between align-items-center";
 
-      var nameSpan = $('<span>').text(place.name || place.location || "Unknown Location");
-      var deleteBtn = $('<span style="cursor:pointer; color:red;" title="Remove this favorite">&times;</span>');
+      var nameSpan = document.createElement("span");
+      nameSpan.textContent = place.name || place.location || "Unknown Location";
 
-      deleteBtn.on("click", function (e) {
+      var deleteBtn = document.createElement("span");
+      deleteBtn.style.cursor = "pointer";
+      deleteBtn.style.color = "red";
+      deleteBtn.title = "Remove this favorite";
+      deleteBtn.textContent = "\u00d7";
+
+      deleteBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         background.knownPlaces.splice(index, 1);
         saveKnownPlaces(background.knownPlaces, {}, function (res) {
@@ -1002,7 +1049,7 @@ function loadHandler() {
         });
       });
 
-      item.on("click", function () {
+      item.addEventListener("click", function () {
         background.settings.latitude = place.latitude;
         background.settings.longitude = place.longitude;
         background.settings.location = place.location;
@@ -1013,33 +1060,33 @@ function loadHandler() {
         background.settings.timestamp = new Date().getTime();
 
         chrome.storage.sync.set({ settings: background.settings }, function () {
-          $("#place").prop("placeholder", place.name || place.location);
-          $("#latitude").val(place.latitude);
-          $("#longitude").val(place.longitude);
-          $("#hl").val(place.hl);
-          $("#gl").val(place.gl);
-          $("#enabled").prop("checked", true);
+          setPlaceholder("place", place.name || place.location);
+          setValue("latitude", place.latitude);
+          setValue("longitude", place.longitude);
+          setValue("hl", place.hl);
+          setValue("gl", place.gl);
+          byId("enabled").checked = true;
           enabler();
         });
       });
 
-      item.append(nameSpan).append(deleteBtn);
+      item.append(nameSpan, deleteBtn);
       container.append(item);
     });
   }
 
   renderFavorites();
 
-  $("#btn-toggle-favorites").on("click", function () {
-    $("#favoritesList").slideToggle("fast");
-    var span = $("#fav-toggle-icon");
-    span.text(span.text() === "▼" ? "▲" : "▼");
+  byId("btn-toggle-favorites").addEventListener("click", function () {
+    var list = byId("favoritesList");
+    var open = list.style.display === "none";
+    list.style.display = open ? "" : "none";
+    byId("fav-toggle-icon").textContent = open ? "▲" : "▼";
   });
 
   // Theme Toggle Listener
-  $("#theme-toggle-btn").on("click", function() {
-    $('body').toggleClass('dark-mode');
-    const isDark = $('body').hasClass('dark-mode');
+  byId("theme-toggle-btn").addEventListener("click", function() {
+    const isDark = document.body.classList.toggle('dark-mode');
     chrome.storage.sync.set({ theme: isDark ? 'dark' : 'light' });
   });
 };
