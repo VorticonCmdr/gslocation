@@ -72,6 +72,11 @@ There are no third-party JavaScript libraries. The only third-party file is the 
 
 ## Changelog
 
+### v4.1.0 - 2026-11-23
+- Removed all third-party JavaScript (jQuery, Typeahead/Bloodhound, Handlebars). The place search and region picker use a small built-in autocomplete, and all markup is built with DOM nodes. The package is about 145 KB smaller and Firefox's add-on linter no longer reports `innerHTML` or `Function` warnings.
+- The search suggestions no longer show grey inline hint text, and the favorites list opens without the slide animation.
+- No template build step any more: `templates/` and `npm run templates` are gone.
+
 ### v4.0.1 - 2026-11-10
 - Source code for review: added the missing Handlebars sources (`templates/typeahead.handlebars`, `templates/locations.handlebars`) so every generated file can be rebuilt with `npm run templates`, and documented the build and third-party libraries. No functional changes.
 
